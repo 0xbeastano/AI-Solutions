@@ -303,27 +303,36 @@ Please confirm this slot.`;
               {/* Personal Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
-                    <User className="mr-2 w-4 h-4" /> NAME
+                  <label htmlFor="booking-name" className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
+                    <User className="mr-2 w-4 h-4" aria-hidden="true" /> NAME
                   </label>
                   <input 
+                    id="booking-name"
                     type="text" 
                     value={customerName}
                     onChange={(e) => {
                       setCustomerName(e.target.value);
                       if(errors.name) setErrors({...errors, name: undefined});
                     }}
-                    // Mobile Opt: Use text-base to prevent iOS zoom
-                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none transition-all ${errors.name ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
+                    // A11y & Mobile Opt
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? "name-error" : undefined}
+                    aria-required="true"
+                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 transition-all ${errors.name ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
                     placeholder="Enter your name"
                   />
-                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                  {errors.name && (
+                    <p id="name-error" role="alert" className="text-red-500 text-xs mt-1 flex items-center">
+                      <AlertCircle size={12} className="mr-1" /> {errors.name}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
-                    <Phone className="mr-2 w-4 h-4" /> PHONE
+                  <label htmlFor="booking-phone" className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
+                    <Phone className="mr-2 w-4 h-4" aria-hidden="true" /> PHONE
                   </label>
                   <input 
+                    id="booking-phone"
                     type="tel" 
                     value={phoneNumber}
                     onChange={(e) => {
@@ -331,24 +340,32 @@ Please confirm this slot.`;
                       setPhoneNumber(val);
                       if(errors.phone) setErrors({...errors, phone: undefined});
                     }}
-                    // Mobile Opt: Use text-base to prevent iOS zoom
-                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none transition-all ${errors.phone ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
+                    // A11y & Mobile Opt
+                    aria-invalid={!!errors.phone}
+                    aria-describedby={errors.phone ? "phone-error" : undefined}
+                    aria-required="true"
+                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 transition-all ${errors.phone ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
                     placeholder="10-digit number"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                   {errors.phone && (
+                    <p id="phone-error" role="alert" className="text-red-500 text-xs mt-1 flex items-center">
+                      <AlertCircle size={12} className="mr-1" /> {errors.phone}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Date Selection */}
               <div className="relative">
                 <label 
-                  onClick={() => dateInputRef.current?.showPicker()}
+                  htmlFor="booking-date"
                   className="flex items-center text-gg-cyan font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl cursor-pointer hover:text-white transition-colors"
                 >
-                  <Calendar className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> SELECT DATE
+                  <Calendar className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" aria-hidden="true" /> SELECT DATE
                 </label>
                 <motion.div animate={errors.date ? { x: [-5, 5, -5, 5, 0] } : {}}>
                   <input 
+                    id="booking-date"
                     ref={dateInputRef}
                     type="date" 
                     min={getTodayString()}
@@ -358,9 +375,11 @@ Please confirm this slot.`;
                       setDate(e.target.value);
                       if(errors.date) setErrors({...errors, date: undefined});
                     }}
+                    aria-invalid={!!errors.date}
+                    aria-describedby={errors.date ? "date-error" : undefined}
+                    aria-required="true"
                     style={{ colorScheme: 'dark' }}
-                    // Mobile Opt: Use text-base/xl to ensure readability and prevent zoom
-                    className={`w-full bg-gg-medium border rounded-xl p-3 md:p-5 text-base md:text-xl text-white font-mono cursor-pointer ${errors.date ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
+                    className={`w-full bg-gg-medium border rounded-xl p-3 md:p-5 text-base md:text-xl text-white font-mono cursor-pointer focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 ${errors.date ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
                   />
                 </motion.div>
                 <AnimatePresence>
@@ -369,6 +388,8 @@ Please confirm this slot.`;
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
+                      id="date-error"
+                      role="alert"
                       className="absolute left-0 -bottom-8 text-red-500 text-sm flex items-center font-bold"
                     >
                       <AlertCircle className="mr-2 w-4 h-4" /> {errors.date}
@@ -379,55 +400,56 @@ Please confirm this slot.`;
 
               {/* Platform Selection */}
               <div>
-                <label className="flex items-center text-gg-purple font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
-                  <Monitor className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> PLATFORM
-                </label>
-                <div className="grid grid-cols-1 gap-3 md:gap-4">
+                <h3 className="flex items-center text-gg-purple font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
+                  <Monitor className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" aria-hidden="true" /> PLATFORM
+                </h3>
+                <div role="radiogroup" aria-label="Select Platform" className="grid grid-cols-1 gap-3 md:gap-4">
                   {TIERS.map((t) => (
-                    <motion.button
+                    <button
                       key={t.id}
+                      role="radio"
+                      aria-checked={selectedTier.id === t.id}
                       onClick={() => setSelectedTier(t)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`p-4 rounded-xl border text-left transition-all duration-300 flex justify-between items-center group relative overflow-hidden ${selectedTier.id === t.id ? 'border-gg-purple bg-gg-purple/10' : 'border-gray-700 bg-gg-medium/50 hover:border-gray-500'}`}
+                      className={`p-3 md:p-4 rounded-xl border text-left transition-all duration-300 flex justify-between items-center group relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-gg-purple ${selectedTier.id === t.id ? 'border-gg-purple bg-gg-purple/10' : 'border-gray-700 bg-gg-medium/50 hover:border-gray-500'}`}
                     >
-                      <div className="relative z-10 flex items-center">
+                      <div className="relative z-10 flex items-center overflow-hidden">
                          {t.type === 'CONSOLE' ? 
-                            <Gamepad className={`mr-3 w-6 h-6 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} /> : 
-                            <Monitor className={`mr-3 w-6 h-6 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} />
+                            <Gamepad className={`mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} aria-hidden="true" /> : 
+                            <Monitor className={`mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} aria-hidden="true" />
                          }
-                         <span className={`text-lg ${selectedTier.id === t.id ? 'text-white font-bold' : 'text-gray-300'}`}>{t.name}</span>
+                         <span className={`text-base md:text-lg truncate ${selectedTier.id === t.id ? 'text-white font-bold' : 'text-gray-300'}`}>{t.name}</span>
                       </div>
-                      <span className={`relative z-10 font-mono ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`}>₹{t.basePrice}/hr</span>
+                      <span className={`relative z-10 font-mono text-sm md:text-base ml-2 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`}>₹{t.basePrice}/hr</span>
                       {selectedTier.id === t.id && (
                         <motion.div layoutId="activeTier" className="absolute inset-0 bg-gradient-to-r from-gg-purple/20 to-transparent" />
                       )}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
 
               {/* Duration Selection */}
               <div>
-                <label className="flex items-center text-gg-lime font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
-                  <Clock className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> DURATION
-                </label>
-                <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                <h3 className="flex items-center text-gg-lime font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
+                  <Clock className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" aria-hidden="true" /> DURATION
+                </h3>
+                {/* Changed to Grid for better Mobile UX */}
+                <div role="radiogroup" aria-label="Select Duration" className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
                   {DURATIONS.map((d) => (
-                    <motion.button
+                    <button
                       key={d.id}
+                      role="radio"
+                      aria-checked={selectedDuration.id === d.id}
                       onClick={() => setSelectedDuration(d)}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ y: 0 }}
-                      className={`flex-1 min-w-[70px] py-3 px-2 rounded-xl border-2 transition-all duration-300 relative ${selectedDuration.id === d.id ? 'border-gg-lime bg-gg-lime/10 text-white' : 'border-gray-700 bg-gg-medium/50 text-gray-400'}`}
+                      className={`py-3 px-2 rounded-xl border-2 transition-all duration-300 relative focus:outline-none focus:ring-2 focus:ring-gg-lime ${selectedDuration.id === d.id ? 'border-gg-lime bg-gg-lime/10 text-white' : 'border-gray-700 bg-gg-medium/50 text-gray-400'}`}
                     >
-                      <span className="font-bold text-xl">{d.label}</span>
+                      <span className="font-bold text-lg md:text-xl">{d.label}</span>
                       {d.multiplier > d.value && (
-                        <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[10px] bg-gg-lime text-gg-dark px-1.5 py-0.5 rounded font-bold whitespace-nowrap border border-black">
+                        <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[10px] bg-gg-lime text-gg-dark px-1.5 py-0.5 rounded font-bold whitespace-nowrap border border-black shadow-lg z-20">
                            SAVE {Math.round(100 - (d.multiplier/d.value)*100)}%
                         </span>
                       )}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -443,14 +465,15 @@ Please confirm this slot.`;
                     
                     <div className="flex items-baseline mb-4">
                         <span className="text-3xl md:text-5xl font-bold text-gg-cyan mr-2">₹</span>
-                        <div className="text-6xl md:text-7xl lg:text-8xl font-heading font-bold tracking-tighter">
+                        {/* Adjusted text size for mobile */}
+                        <div className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold tracking-tighter">
                           <AnimatedCounter value={totalPrice} />
                         </div>
                     </div>
 
                     <div className="h-px w-full bg-gray-700 my-4 md:my-6" />
 
-                    <div className="space-y-3 md:space-y-4 text-base md:text-lg text-gray-300 font-mono mb-8 md:mb-10">
+                    <div className="space-y-3 md:space-y-4 text-sm md:text-lg text-gray-300 font-mono mb-8 md:mb-10">
                         <div className="flex justify-between">
                             <span>Platform Rate</span>
                             <span>₹{selectedTier.basePrice}/hr</span>
@@ -466,7 +489,7 @@ Please confirm this slot.`;
                     </div>
                     
                     {errors.general && (
-                      <div className="mb-4 p-3 bg-red-900/20 border border-red-500/50 rounded text-red-400 text-xs md:text-sm text-center">
+                      <div role="alert" className="mb-4 p-3 bg-red-900/20 border border-red-500/50 rounded text-red-400 text-xs md:text-sm text-center">
                         {errors.general}
                       </div>
                     )}
@@ -476,9 +499,10 @@ Please confirm this slot.`;
                       disabled={status !== 'IDLE'}
                       whileHover={status === 'IDLE' ? { scale: 1.02 } : {}}
                       whileTap={status === 'IDLE' ? { scale: 0.98 } : {}}
-                      className={`w-full py-4 md:py-5 font-bold text-lg md:text-xl rounded-xl shadow-xl transition-all relative overflow-hidden flex items-center justify-center group/btn ${
+                      className={`w-full py-4 md:py-5 font-bold text-lg md:text-xl rounded-xl shadow-xl transition-all relative overflow-hidden flex items-center justify-center group/btn focus:outline-none focus:ring-2 focus:ring-white ${
                           status === 'IDLE' ? 'bg-gradient-to-r from-gg-cyan to-gg-purple text-white' : status === 'REDIRECTING' ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                       }`}
+                      aria-label={status === 'PROCESSING' ? 'Processing booking...' : 'Confirm Booking'}
                     >
                         <AnimatePresence mode="wait">
                             {status === 'IDLE' && <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>CONFIRM BOOKING</motion.span>}

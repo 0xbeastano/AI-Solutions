@@ -30,6 +30,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
+  // Accessibility: Close on Escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && isOpen) {
+            onClose();
+        }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
   const loadData = () => {
     try {
       const data = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -120,6 +131,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dashboard-title"
         className="fixed inset-0 z-[10000] bg-gg-dark/90 backdrop-blur-md flex items-center justify-center p-4 md:p-10 font-sans"
       >
         <motion.div 
@@ -130,14 +144,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gg-dark/50">
             <div>
-               <h2 className="text-2xl font-heading font-bold text-white tracking-wider flex items-center">
-                 <span className="w-3 h-3 bg-gg-lime rounded-full mr-3 animate-pulse"/>
+               <h2 id="dashboard-title" className="text-2xl font-heading font-bold text-white tracking-wider flex items-center">
+                 <span className="w-3 h-3 bg-gg-lime rounded-full mr-3 animate-pulse" aria-hidden="true"/>
                  ADMIN DASHBOARD
                </h2>
                <p className="text-gray-400 text-xs font-mono mt-1">LOCAL STORAGE DATABASE</p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors text-white">
-              <X />
+            <button onClick={onClose} aria-label="Close Dashboard" className="p-2 hover:bg-gray-700 rounded-full transition-colors text-white focus:outline-none focus:ring-2 focus:ring-gg-cyan">
+              <X aria-hidden="true" />
             </button>
           </div>
 
@@ -145,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gg-medium">
              <div className="bg-gg-dark p-5 rounded-xl border border-gray-800 flex items-center">
                 <div className="p-3 bg-gg-cyan/10 rounded-lg mr-4 text-gg-cyan">
-                  <TrendingUp />
+                  <TrendingUp aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs uppercase font-bold">Total Revenue</p>
@@ -154,7 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
              </div>
              <div className="bg-gg-dark p-5 rounded-xl border border-gray-800 flex items-center">
                 <div className="p-3 bg-gg-purple/10 rounded-lg mr-4 text-gg-purple">
-                  <Users />
+                  <Users aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs uppercase font-bold">Total Bookings</p>
@@ -163,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
              </div>
              <div className="bg-gg-dark p-5 rounded-xl border border-gray-800 flex items-center">
                 <div className="p-3 bg-gg-pink/10 rounded-lg mr-4 text-gg-pink">
-                  <Monitor />
+                  <Monitor aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs uppercase font-bold">Top Platform</p>
@@ -175,8 +189,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
           {/* Controls */}
           <div className="px-6 pb-4 flex flex-col md:flex-row justify-between items-center gap-4">
              <div className="relative w-full md:w-96">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" aria-hidden="true" />
+                <label htmlFor="dashboard-search" className="sr-only">Search Bookings</label>
                 <input 
+                  id="dashboard-search"
+                  autoFocus
                   type="text" 
                   placeholder="Search by name, ID or phone..." 
                   value={searchTerm}
@@ -187,15 +204,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
              <div className="flex gap-3">
                 <button 
                   onClick={clearHistory} 
-                  className="flex items-center px-4 py-2 bg-red-900/20 text-red-500 border border-red-900/50 rounded-lg text-sm font-bold hover:bg-red-900/40 transition-colors"
+                  className="flex items-center px-4 py-2 bg-red-900/20 text-red-500 border border-red-900/50 rounded-lg text-sm font-bold hover:bg-red-900/40 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> CLEAR DB
+                  <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" /> CLEAR DB
                 </button>
                 <button 
                   onClick={exportCSV} 
-                  className="flex items-center px-4 py-2 bg-gg-cyan/10 text-gg-cyan border border-gg-cyan/30 rounded-lg text-sm font-bold hover:bg-gg-cyan/20 transition-colors"
+                  className="flex items-center px-4 py-2 bg-gg-cyan/10 text-gg-cyan border border-gg-cyan/30 rounded-lg text-sm font-bold hover:bg-gg-cyan/20 transition-colors focus:outline-none focus:ring-2 focus:ring-gg-cyan"
                 >
-                  <Download className="w-4 h-4 mr-2" /> EXPORT CSV
+                  <Download className="w-4 h-4 mr-2" aria-hidden="true" /> EXPORT CSV
                 </button>
              </div>
           </div>
