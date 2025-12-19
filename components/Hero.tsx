@@ -15,6 +15,9 @@ export const Hero: React.FC = () => {
 
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
+    
+    // Cyberpunk Theme Colors
+    const colors = ['#00D9FF', '#9D00FF', '#FF006E'];
 
     // Detect mobile for performance optimization
     const isMobile = window.innerWidth < 768;
@@ -25,25 +28,29 @@ export const Hero: React.FC = () => {
     let currentMouseX = 0;
     let currentMouseY = 0;
 
-    const particles: { 
-      x: number; 
-      y: number; 
-      vx: number; 
-      vy: number; 
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
       size: number;
+      color: string;
       depth: number; // For parallax effect
-    }[] = [];
+    }
+
+    const particles: Particle[] = [];
     
-    // Reduced particle count for mobile
-    const particleCount = isMobile ? 20 : 50;
+    // Particle count setup
+    const particleCount = isMobile ? 30 : 80;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
         size: Math.random() * 2 + 0.5,
+        color: colors[Math.floor(Math.random() * colors.length)],
         depth: Math.random() * 0.5 + 0.2, // Depth factor between 0.2 and 0.7
       });
     }
@@ -59,7 +66,9 @@ export const Hero: React.FC = () => {
         currentMouseY += (targetMouseY - currentMouseY) * 0.05;
       }
 
-      particles.forEach(p => {
+      // Pre-calculate visual positions and update physics
+      const visualParticles = particles.map(p => {
+        // Update physics
         p.x += p.vx;
         p.y += p.vy;
 
@@ -69,21 +78,51 @@ export const Hero: React.FC = () => {
         if (p.y < -50) p.y = height + 50;
         if (p.y > height + 50) p.y = -50;
 
-        // Apply parallax offset based on depth
-        // We calculate draw position but keep logical position (p.x, p.y) independent of mouse
-        const parallaxX = p.x + (currentMouseX * p.depth * 50);
-        const parallaxY = p.y + (currentMouseY * p.depth * 50);
+        // Calculate parallax visual position
+        const px = p.x + (currentMouseX * p.depth * 60);
+        const py = p.y + (currentMouseY * p.depth * 60);
 
-        ctx.globalAlpha = 0.3 + (p.depth * 0.5); // Depth affects opacity
-        ctx.fillStyle = '#00D9FF';
+        return { ...p, px, py };
+      });
+
+      // Draw connections (Constellation effect)
+      if (!isMobile) {
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < visualParticles.length; i++) {
+          const p1 = visualParticles[i];
+          for (let j = i + 1; j < visualParticles.length; j++) {
+            const p2 = visualParticles[j];
+            const dx = p1.px - p2.px;
+            const dy = p1.py - p2.py;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const connectionDist = 120;
+
+            if (dist < connectionDist) {
+               // Calculate opacity based on distance
+               const opacity = (1 - dist / connectionDist) * 0.15;
+               ctx.strokeStyle = `rgba(0, 217, 255, ${opacity})`;
+               ctx.beginPath();
+               ctx.moveTo(p1.px, p1.py);
+               ctx.lineTo(p2.px, p2.py);
+               ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Draw particles
+      visualParticles.forEach(p => {
+        ctx.globalAlpha = 0.6 + (p.depth * 0.4);
+        ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(parallaxX, parallaxY, p.size, 0, Math.PI * 2);
+        ctx.arc(p.px, p.py, p.size, 0, Math.PI * 2);
         
         // Subtle glow effect
-        ctx.shadowBlur = 10 + (p.depth * 5); // Glow varies by depth
-        ctx.shadowColor = '#00D9FF';
+        ctx.shadowBlur = 10 + (p.depth * 5); 
+        ctx.shadowColor = p.color;
         
         ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow for lines
       });
 
       animationFrameId = requestAnimationFrame(render);
@@ -119,11 +158,10 @@ export const Hero: React.FC = () => {
 
   const headline = "GAME HARDER AT GGWELLPLAYED";
   const words = headline.split(" ");
-  const subheadingText = "Pune's Premier Gaming Destination | High-End PCs | PS5 | Tournaments";
 
   return (
     <section className="relative min-h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center text-center px-4 md:px-6">
-      {/* Background Particles */}
+      {/* Background Particles Canvas */}
       <motion.div style={{ y }} className="absolute inset-0 z-0">
          <canvas ref={canvasRef} className="absolute inset-0" />
          <div className="absolute inset-0 bg-gradient-to-b from-gg-dark/60 via-transparent to-gg-dark pointer-events-none" />
@@ -147,22 +185,22 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mb-2 md:mb-4 relative inline-block group cursor-default"
+          className="mb-2 md:mb-4 relative inline-block group cursor-default max-w-full"
           data-hover
         >
-          <h2 className="relative z-10 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-gg-cyan to-gg-purple tracking-tighter">
+          <h2 className="relative z-10 text-4xl sm:text-5xl md:text-5xl lg:text-7xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-gg-cyan to-gg-purple tracking-tighter">
             GG WELLPLAYED
           </h2>
           {/* Glitch Layers */}
-          <h2 className="absolute top-0 left-0 -z-10 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-heading font-bold text-gg-cyan opacity-70 animate-glitch-1 tracking-tighter mix-blend-screen translate-x-[2px]" aria-hidden="true">
+          <h2 className="absolute top-0 left-0 -z-10 text-4xl sm:text-5xl md:text-5xl lg:text-7xl font-heading font-bold text-gg-cyan opacity-70 animate-glitch-1 tracking-tighter mix-blend-screen translate-x-[2px]" aria-hidden="true">
             GG WELLPLAYED
           </h2>
-          <h2 className="absolute top-0 left-0 -z-10 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-heading font-bold text-gg-pink opacity-70 animate-glitch-2 tracking-tighter mix-blend-screen -translate-x-[2px]" aria-hidden="true">
+          <h2 className="absolute top-0 left-0 -z-10 text-4xl sm:text-5xl md:text-5xl lg:text-7xl font-heading font-bold text-gg-pink opacity-70 animate-glitch-2 tracking-tighter mix-blend-screen -translate-x-[2px]" aria-hidden="true">
             GG WELLPLAYED
           </h2>
         </motion.div>
 
-        <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-white flex flex-wrap justify-center gap-x-3 md:gap-x-4 gap-y-2 drop-shadow-[0_0_10px_#00D9FF]">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white flex flex-wrap justify-center gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-2 drop-shadow-[0_0_10px_#00D9FF] px-2">
           {words.map((word, i) => (
             <motion.span
               key={i}
@@ -176,20 +214,22 @@ export const Hero: React.FC = () => {
           ))}
         </h1>
 
+        {/* Improved Subheading for Mobile Visibility */}
         <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.8 }}
-          className="h-8 md:h-12 flex justify-center w-full overflow-hidden"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.8, duration: 0.8 }}
+          className="w-full flex justify-center px-4"
         >
-           <motion.p
-            initial={{ width: 0 }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 3, delay: 2, ease: "linear" }}
-            className="text-gg-text-sec text-xs sm:text-sm md:text-xl font-mono text-gray-300 border-r-2 border-gg-cyan whitespace-nowrap overflow-hidden max-w-fit px-1"
-          >
-            {subheadingText}
-          </motion.p>
+           <p className="text-gg-text-sec text-xs sm:text-sm md:text-xl font-mono text-gray-300 leading-relaxed md:whitespace-nowrap text-center">
+            <span className="md:hidden block mb-2">Pune's Premier Gaming Destination</span>
+            <span className="hidden md:inline">Pune's Premier Gaming Destination | </span>
+            <span className="inline-block">High-End PCs</span> 
+            <span className="mx-2 text-gg-cyan">|</span> 
+            <span className="inline-block">PS5</span> 
+            <span className="mx-2 text-gg-cyan">|</span> 
+            <span className="inline-block">Tournaments</span>
+          </p>
         </motion.div>
 
         <motion.button
@@ -198,7 +238,7 @@ export const Hero: React.FC = () => {
           transition={{ delay: 2.5 }}
           whileHover={{ scale: 1.05, boxShadow: "0 0 20px #00D9FF" }}
           whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 md:px-8 md:py-4 border-2 border-gg-cyan text-gg-cyan font-bold text-base md:text-lg rounded-sm hover:bg-gg-cyan hover:text-gg-dark transition-colors duration-300 animate-pulse-slow relative group overflow-hidden active:bg-gg-cyan/20"
+          className="px-6 py-3 md:px-8 md:py-4 border-2 border-gg-cyan text-gg-cyan font-bold text-sm md:text-lg rounded-sm hover:bg-gg-cyan hover:text-gg-dark transition-colors duration-300 animate-pulse-slow relative group overflow-hidden active:bg-gg-cyan/20 mt-4 md:mt-0"
           onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
           data-hover
         >
