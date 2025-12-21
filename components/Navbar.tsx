@@ -41,7 +41,6 @@ export const Navbar: React.FC = () => {
     { name: 'FACILITIES', id: 'facilities' },
     { name: 'PRICING', id: 'pricing' },
     { name: 'GAMES', id: 'games' },
-    // { name: 'TOURNAMENTS', id: 'tournaments' }, // Removed
     { name: 'BOOKING', id: 'booking' },
   ];
 
@@ -50,13 +49,13 @@ export const Navbar: React.FC = () => {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
+        className={`fixed top-0 left-0 right-0 z-[50] transition-all duration-300 border-b ${
           isScrolled 
             ? 'bg-gg-dark/95 backdrop-blur-md border-gg-cyan/30 py-3 shadow-lg' 
             : 'bg-transparent border-transparent py-4 md:py-6'
         }`}
       >
-        <div className="container mx-auto px-4 max-w-7xl flex justify-between items-center">
+        <div className="container mx-auto px-4 max-w-7xl flex justify-between items-center relative z-[60]">
           {/* Logo */}
           <div 
             className="flex items-center gap-3 cursor-pointer group select-none relative z-50"
@@ -94,7 +93,7 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Toggle */}
           <button
-            className="md:hidden text-white p-2 focus:outline-none relative z-50"
+            className="md:hidden text-white p-2 focus:outline-none relative z-[60]"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle Menu"
           >
@@ -111,10 +110,10 @@ export const Navbar: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-40 bg-gg-dark flex flex-col items-center justify-center space-y-8 touch-none overflow-hidden"
+            className="fixed inset-0 z-[55] bg-gg-dark flex flex-col items-center justify-center space-y-8 touch-none overflow-hidden"
           >
             {/* Background Effects */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gg-cyan/10 rounded-full blur-[80px]" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-gg-purple/10 rounded-full blur-[80px]" />
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[length:30px_30px]" />

@@ -44,16 +44,12 @@ export const Pricing: React.FC = () => {
   };
 
   const handleSelectPlan = (planId: string) => {
-    // Dispatch custom event so Booking component knows what to select
     const event = new CustomEvent('selectBookingTier', { detail: planId });
     window.dispatchEvent(event);
     
-    // Smooth scroll to the booking section
     const bookingSection = document.getElementById('booking');
     if (bookingSection) {
       bookingSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      console.error("Booking section not found");
     }
   };
 
@@ -63,7 +59,7 @@ export const Pricing: React.FC = () => {
         <div className="text-center mb-10 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-heading font-bold mb-6 md:mb-8">PRICING PLANS</h2>
           
-          <div className="inline-flex bg-gg-medium rounded-full p-1 border border-gg-cyan/30 cursor-pointer shadow-lg max-w-full overflow-hidden">
+          <div className="inline-flex bg-gg-medium rounded-full p-1 border border-gg-cyan/30 cursor-pointer shadow-lg max-w-full overflow-hidden touch-manipulation">
             <button
               onClick={() => setActiveType('PC')}
               className={`px-6 py-2 md:px-8 md:py-3 rounded-full font-bold transition-all duration-300 relative z-20 min-w-[100px] md:min-w-[150px] text-xs md:text-base ${activeType === 'PC' ? 'bg-gg-cyan text-gg-dark shadow-[0_0_15px_#00D9FF]' : 'text-gray-400 hover:text-white'}`}
@@ -122,13 +118,13 @@ export const Pricing: React.FC = () => {
 
                   <button 
                     onClick={() => handleSelectPlan(plan.id)}
-                    className={`w-full py-3 md:py-4 rounded-lg font-bold transition-all duration-300 relative z-20 cursor-pointer active:scale-95 text-sm md:text-base
+                    className={`w-full py-3 md:py-4 rounded-lg font-bold transition-all duration-300 relative z-20 cursor-pointer active:scale-95 text-sm md:text-base touch-manipulation
                       ${plan.isBestValue 
                         ? 'bg-gradient-to-r from-gg-purple to-gg-pink hover:shadow-[0_0_20px_#9D00FF] text-white' 
                         : 'border border-gg-cyan text-gg-cyan hover:bg-gg-cyan hover:text-gg-dark'
                       }`}
                   >
-                    SELECT
+                    SELECT PLAN
                   </button>
                 </TiltCard>
               </motion.div>

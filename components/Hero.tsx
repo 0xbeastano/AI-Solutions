@@ -12,25 +12,22 @@ interface VideoConfig {
 const VIDEOS: VideoConfig[] = [
   {
     id: 'fps-gameplay',
-    // Abstract HUD video
+    // Futuristic HUD / FPS Style
     src: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-interface-hud-scanning-data-3174-large.mp4",
-    // Poster: Tactical FPS View - High Quality Gaming Setup
     poster: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop", 
     alt: "Tactical FPS Gameplay"
   },
   {
     id: 'racing-gameplay',
-    // Abstract Tunnel/Speed video
+    // High speed tunnel (Racing feel)
     src: "https://assets.mixkit.co/videos/preview/mixkit-abstract-tunnel-with-blue-lights-2572-large.mp4",
-    // Poster: Racing Cockpit - Steering Wheel
     poster: "https://images.unsplash.com/photo-1547924667-62ca45b7e2a8?q=80&w=1600&auto=format&fit=crop", 
     alt: "High Speed Racing Simulator"
   },
   {
     id: 'rpg-gameplay',
-    // Cyberpunk City video
+    // Cyberpunk City (Open World feel)
     src: "https://assets.mixkit.co/videos/preview/mixkit-purple-and-blue-lights-in-a-cyberpunk-city-4037-large.mp4", 
-    // Poster: Cyberpunk / Neon City Atmosphere
     poster: "https://images.unsplash.com/photo-1533972724312-6eaf65e81882?q=80&w=1600&auto=format&fit=crop", 
     alt: "Open World RPG Atmosphere"
   }
@@ -90,39 +87,189 @@ const GlitchTextWrapper = ({ children, className = "", isOutline = false }: { ch
   );
 };
 
+// Advanced Particle Definition
+interface Particle {
+  x: number;
+  y: number;
+  baseX: number;
+  baseY: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string; // RGB values only (e.g. "0, 217, 255")
+  depth: number; // 0.1 (background) to 1.0 (foreground)
+}
+
 export const Hero: React.FC = () => {
   const containerRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
   const isInView = useInView(containerRef);
   const { scrollY } = useScroll();
   const yText = useTransform(scrollY, [0, 500], [0, 200]);
   
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  useEffect(() => {
-    videoRefs.current.forEach(video => {
-      if (!video) return;
-      if (isInView) {
-        // Attempt to play, catch errors (like autoplay policy or network issues)
+  // Robust Video Handling
+  const handleVideoLoaded = (index: number) => {
+    const video = videoRefs.current[index];
+    if (video) {
+        // Mobile optimization: If hidden, don't force play
+        if (window.innerWidth < 768 && index > 0) return;
+        
         video.play().then(() => {
-             // If video plays successfully, fade it in
-             video.style.opacity = '0.6'; 
+            video.style.opacity = '1';
         }).catch((e) => {
-             console.log("Video autoplay blocked or failed, keeping poster visible.", e);
-             // Keep video invisible so background image shows
-             video.style.opacity = '0'; 
+            console.warn("Autoplay prevented:", e);
         });
+    }
+  };
+
+  useEffect(() => {
+    videoRefs.current.forEach((video, idx) => {
+      if (!video) return;
+      // Mobile optimization: Pause videos that are hidden via CSS
+      if (window.innerWidth < 768 && idx > 0) {
+        video.pause();
+        return;
+      }
+
+      if (isInView) {
+        if (video.paused && video.readyState >= 3) {
+             video.play().catch(() => {});
+        }
       } else {
         video.pause();
       }
     });
   }, [isInView]);
 
+  // --- ADVANCED PARTICLE SYSTEM ---
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    let particles: Particle[] = [];
+    let animationFrameId: number;
+    let width = 0;
+    let height = 0;
+
+    // Configuration
+    // Performance: Significantly reduce particles on mobile
+    const PARTICLE_COUNT = window.innerWidth < 768 ? 25 : 80;
+    const CONNECTION_DISTANCE = window.innerWidth < 768 ? 100 : 120; 
+    const PARALLAX_STRENGTH = 0.04; 
+
+    const resizeCanvas = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const depth = Math.random() * 0.8 + 0.2; 
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const isCyan = Math.random() > 0.5;
+        
+        particles.push({
+          x,
+          y,
+          baseX: x,
+          baseY: y,
+          vx: (Math.random() - 0.5) * 0.5 * (1 + depth),
+          vy: (Math.random() - 0.5) * 0.5 * (1 + depth),
+          size: (Math.random() * 2 + 0.5) * depth,
+          color: isCyan ? '0, 217, 255' : '157, 0, 255',
+          depth
+        });
+      }
+    };
+
+    const drawParticles = () => {
+      ctx.clearRect(0, 0, width, height);
+      
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      const targetOffsetX = (mouseRef.current.x - centerX) * PARALLAX_STRENGTH;
+      const targetOffsetY = (mouseRef.current.y - centerY) * PARALLAX_STRENGTH;
+
+      particles.forEach((p, i) => {
+        p.baseX += p.vx;
+        p.baseY += p.vy;
+
+        if (p.baseX < -50) p.baseX = width + 50;
+        if (p.baseX > width + 50) p.baseX = -50;
+        if (p.baseY < -50) p.baseY = height + 50;
+        if (p.baseY > height + 50) p.baseY = -50;
+
+        // Mobile optimization: Reduce complex math if possible, but simple parallax is fine
+        p.x = p.baseX - (targetOffsetX * p.depth);
+        p.y = p.baseY - (targetOffsetY * p.depth);
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color}, ${p.depth * 0.8 + 0.2})`; 
+        
+        // Performance: Only glow on high-end or desktop (approximated by width)
+        if (width > 768 && p.depth > 0.6) {
+             ctx.shadowBlur = 10 * p.depth;
+             ctx.shadowColor = `rgb(${p.color})`;
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            if (Math.abs(dx) > CONNECTION_DISTANCE || Math.abs(dy) > CONNECTION_DISTANCE) continue;
+            
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < CONNECTION_DISTANCE) {
+                ctx.beginPath();
+                const alpha = (1 - dist / CONNECTION_DISTANCE) * 0.25 * Math.min(p.depth, p2.depth);
+                
+                ctx.strokeStyle = `rgba(${p.color}, ${alpha})`;
+                ctx.lineWidth = 1 * Math.min(p.depth, p2.depth);
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(drawParticles);
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawParticles();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
   const handleMouseMove = (e: React.MouseEvent) => {
+    // Optional: Disable mouse tracking on mobile to save battery since touch doesn't trigger hover same way
+    if (window.innerWidth < 768) return;
+
     const { clientX, clientY } = e;
     if (containerRef.current) {
         containerRef.current.style.setProperty('--mouse-x', `${clientX}px`);
         containerRef.current.style.setProperty('--mouse-y', `${clientY}px`);
     }
+    mouseRef.current = { x: clientX, y: clientY };
   };
 
   return (
@@ -132,19 +279,20 @@ export const Hero: React.FC = () => {
       className="relative min-h-[100svh] w-full overflow-hidden flex flex-col items-center justify-center text-center bg-gg-dark perspective-1000 px-4 touch-manipulation"
     >
       {/* LAYER 1: BACKGROUND GRID (IMAGES + VIDEOS) */}
-      <div className="absolute inset-0 z-0 grid grid-cols-1 md:grid-cols-3 pointer-events-none bg-gg-dark">
+      <div className="absolute inset-0 z-0 grid grid-cols-1 md:grid-cols-3 pointer-events-none bg-black">
         {VIDEOS.map((video, idx) => (
-          <div key={video.id} className="relative w-full h-full overflow-hidden border-b md:border-b-0 md:border-r border-black/50 group">
+          // PERFORMANCE: On mobile (idx > 0), hide the extra videos completely to save rendering resources
+          <div key={video.id} className={`relative w-full h-full overflow-hidden border-b md:border-b-0 md:border-r border-gg-cyan/20 group ${idx > 0 ? 'hidden md:block' : ''}`}>
             
-            {/* 1. Background Image Layer (Uses img tag for reliability) */}
+            {/* 1. Background Image Layer */}
             <img 
               src={video.poster}
               alt={video.alt}
-              className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105 filter brightness-75"
               loading="eager"
             />
             
-            {/* 2. Video Layer (Starts invisible, fades in if loaded) */}
+            {/* 2. Video Layer */}
             <video
               ref={el => { videoRefs.current[idx] = el }}
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10"
@@ -153,22 +301,31 @@ export const Hero: React.FC = () => {
               loop
               playsInline
               preload="auto"
+              onLoadedData={() => handleVideoLoaded(idx)}
             >
               <source src={video.src} type="video/mp4" />
             </video>
             
-            {/* 3. Gradient Overlays */}
-            <div className="absolute inset-0 bg-gg-dark/40 mix-blend-multiply z-20" />
+            {/* 3. Scanline & Overlays */}
+            <div className="absolute inset-0 z-20 pointer-events-none opacity-20 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]" />
+            <div className="absolute inset-0 bg-gg-dark/30 mix-blend-multiply z-20" />
             <div className="absolute inset-0 bg-gradient-to-b from-gg-dark/90 via-transparent to-gg-dark/90 z-20" />
+            <div className="absolute inset-0 border-2 border-transparent group-hover:border-gg-cyan/50 transition-colors duration-500 z-30 pointer-events-none" />
           </div>
         ))}
       </div>
 
-      {/* LAYER 2: SPOTLIGHT (Desktop) */}
+      {/* LAYER 1.5: PARTICLE SYSTEM CANVAS */}
+      <canvas 
+        ref={canvasRef} 
+        className="absolute inset-0 z-[15] pointer-events-none"
+      />
+
+      {/* LAYER 2: SPOTLIGHT (Desktop Only) */}
       <div 
         className="absolute inset-0 z-10 pointer-events-none transition-opacity duration-300 hidden md:block"
         style={{
-          background: `radial-gradient(circle 800px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%)`,
+          background: `radial-gradient(circle 600px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 217, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%)`,
         }}
       />
 
@@ -219,7 +376,7 @@ export const Hero: React.FC = () => {
            </p>
         </motion.div>
 
-        {/* ACTION BUTTON - OPTIMIZED FOR TOUCH */}
+        {/* ACTION BUTTON */}
         <motion.button
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
