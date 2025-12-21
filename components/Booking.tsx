@@ -88,6 +88,7 @@ export const Booking: React.FC = () => {
     try {
         const stored = localStorage.getItem(RATE_LIMIT_KEY);
         const history = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(history)) return true; // Safety check
         const now = Date.now();
         const windowTime = 5 * 60 * 1000;
         const limit = 3;
@@ -97,6 +98,8 @@ export const Booking: React.FC = () => {
         localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentAttempts));
         return true;
     } catch (e) {
+        // If storage is corrupted, reset it and allow processing
+        localStorage.removeItem(RATE_LIMIT_KEY);
         return true; 
     }
   };
@@ -114,9 +117,17 @@ export const Booking: React.FC = () => {
       const [year, month, day] = date.split('-').map(Number);
       const selectedDate = new Date(year, month - 1, day);
       const now = new Date();
+      // Reset time for comparison
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      if (selectedDate.getTime() < today.getTime()) { newErrors.date = "Date cannot be in the past"; isValid = false; }
-      if (selectedDate.getTime() === today.getTime() && now.getHours() >= 22) { newErrors.date = "Bookings closed for today (after 10 PM)"; isValid = false; }
+      
+      if (selectedDate.getTime() < today.getTime()) { 
+        newErrors.date = "Date cannot be in the past"; 
+        isValid = false; 
+      }
+      if (selectedDate.getTime() === today.getTime() && now.getHours() >= 22) { 
+        newErrors.date = "Bookings closed for today (after 10 PM)"; 
+        isValid = false; 
+      }
     }
     setErrors(newErrors);
     return isValid;
@@ -146,11 +157,21 @@ export const Booking: React.FC = () => {
 
     try {
       const existingData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      const bookings: BookingType[] = existingData ? JSON.parse(existingData) : [];
+      let bookings: BookingType[] = [];
+      if (existingData) {
+          try {
+              bookings = JSON.parse(existingData);
+              if (!Array.isArray(bookings)) bookings = [];
+          } catch {
+              bookings = [];
+          }
+      }
       bookings.push(bookingData);
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(bookings));
       window.dispatchEvent(new Event('bookingUpdated'));
-    } catch (error) {}
+    } catch (error) {
+        console.error("Storage error", error);
+    }
 
     setTimeout(() => {
       setStatus('REDIRECTING');
@@ -192,10 +213,21 @@ export const Booking: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             
             {/* Visual Seat Map */}
-            <div className="flex flex-col">
+            <div className="flex flex-col relative">
               <h3 className="flex items-center text-gg-cyan font-bold mb-4 tracking-wide text-sm md:text-base">
                 <Map className="mr-2 w-4 h-4" /> INTERACTIVE FLOOR PLAN
               </h3>
+              
+              {/* Mobile Swipe Hint - Optimized for Mobile */}
+              <motion.div 
+                 initial={{ opacity: 0 }}
+                 whileInView={{ opacity: 1 }}
+                 viewport={{ once: true, amount: 0.5 }} // Only trigger when 50% in view
+                 className="md:hidden flex items-center justify-center gap-2 mb-2 text-gg-cyan/80 text-[10px] font-bold tracking-widest animate-pulse"
+              >
+                 <span>&larr; SWIPE MAP &rarr;</span>
+              </motion.div>
+
               <SeatMap 
                 selectedSeatId={selectedSeatId}
                 onSeatSelect={handleSeatSelect}
@@ -275,7 +307,8 @@ export const Booking: React.FC = () => {
                       if(errors.date) setErrors({...errors, date: undefined});
                     }}
                     style={{ colorScheme: 'dark' }}
-                    className={`w-full bg-gg-medium border rounded-xl p-4 md:p-5 text-base md:text-xl text-white font-mono cursor-pointer focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 touch-manipulation ${errors.date ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
+                    // Increased padding for better touch target on mobile
+                    className={`w-full bg-gg-medium border rounded-xl p-4 md:p-5 text-base md:text-xl text-white font-mono cursor-pointer focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 touch-manipulation min-h-[60px] ${errors.date ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
                 />
                 {errors.date && <p className="text-red-500 text-sm mt-2">{errors.date}</p>}
               </div>

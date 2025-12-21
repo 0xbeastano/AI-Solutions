@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, Clock, Map as MapIcon } from 'lucide-react';
+import { MapPin, Phone, Clock, Map as MapIcon } from 'lucide-react';
 
 export const LocationContact: React.FC = () => {
   return (
@@ -85,10 +85,6 @@ export const LocationContact: React.FC = () => {
           <div className="flex items-center">
             <Phone className="mr-3 text-gg-purple flex-shrink-0" size={20} aria-hidden="true" />
             <p>+91 98765 43210</p>
-          </div>
-          <div className="flex items-center">
-            <Mail className="mr-3 text-gg-purple flex-shrink-0" size={20} aria-hidden="true" />
-            <p>hello@ggwellplayed.in</p>
           </div>
           <div className="flex items-center">
             <Clock className="mr-3 text-gg-purple flex-shrink-0" size={20} aria-hidden="true" />

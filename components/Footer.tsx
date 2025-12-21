@@ -1,5 +1,5 @@
 import React from 'react';
-import { Twitter, Instagram, Youtube, Twitch, Facebook, Lock } from 'lucide-react';
+import { Twitter, Instagram, Youtube, Facebook, Lock } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const triggerDashboard = (e: React.MouseEvent) => {
@@ -10,8 +10,7 @@ export const Footer: React.FC = () => {
   const socialLinks = [
     { icon: Instagram, label: "Instagram", url: "https://www.instagram.com/ggwellplayedcafe/" },
     { icon: Youtube, label: "YouTube", url: "https://www.youtube.com/c/GGwellplayed" },
-    { icon: Facebook, label: "Facebook", url: "https://www.facebook.com/ggwellplayedgamingcafe/" },
-    { icon: Twitch, label: "Twitch", url: "#" }
+    { icon: Facebook, label: "Facebook", url: "https://www.facebook.com/ggwellplayedgamingcafe/" }
   ];
 
   return (
@@ -55,7 +54,6 @@ export const Footer: React.FC = () => {
             <ul className="space-y-4 text-gray-400 text-sm">
               <li>Satara Rd, Pune, MH</li>
               <li>Kojagiri Building, 2nd Floor</li>
-              <li>hello@ggwellplayed.in</li>
               <li>+91 98765 43210</li>
             </ul>
           </div>

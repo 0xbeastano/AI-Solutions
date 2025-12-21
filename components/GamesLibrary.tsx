@@ -78,9 +78,10 @@ export const GamesLibrary: React.FC = () => {
           whileHover={{ animationPlayState: "paused" }}
           whileTap={{ animationPlayState: "paused" }}
         >
+          {/* Duplicated list for infinite scroll - Using unique keys to prevent React warnings */}
           {[...games, ...games].map((game, index) => (
             <motion.div
-              key={index}
+              key={`${game.title}-${index}`}
               whileHover={{ scale: 1.05, zIndex: 10 }}
               whileTap={{ scale: 0.95 }}
               className="relative flex-shrink-0 w-36 h-56 md:w-64 md:h-96 rounded-xl cursor-pointer touch-manipulation"
