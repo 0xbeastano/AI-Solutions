@@ -13,12 +13,42 @@ export const Footer: React.FC = () => {
     { icon: Facebook, label: "Facebook", url: "https://www.facebook.com/ggwellplayedgamingcafe/" }
   ];
 
+  const scrollToSection = (id: string) => {
+    if (id === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const footerLinks = [
+    { label: 'Home', id: 'home' },
+    { label: 'Pricing', id: 'pricing' },
+    { label: 'Games', id: 'games' },
+    { label: 'Features', id: 'features' },
+    { label: 'Contact', id: 'contact' }
+  ];
+
   return (
     <footer className="bg-gg-medium pt-20 pb-10 border-t border-gray-800">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-heading font-bold text-white tracking-tighter">GG WELLPLAYED</h2>
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Adjusted Grid Gap: gap-8 on mobile, gap-12 on md+ */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-16 text-center md:text-left">
+          <div className="space-y-6 flex flex-col items-center md:items-start">
+            <div className="flex flex-col gap-2 select-none">
+              {/* Replaced Image Logo with Text Logo for consistency */}
+              <div className="flex flex-col leading-none">
+                <span className="font-heading font-black text-2xl tracking-widest text-white italic flex gap-2 shadow-black drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] justify-center md:justify-start">
+                  GG <span className="text-gg-cyan drop-shadow-[0_0_10px_rgba(0,217,255,0.8)]">WELLPLAYED</span>
+                </span>
+                <span className="text-[10px] font-mono text-gray-400 tracking-[0.3em] uppercase mt-1">
+                  Premium Esports Arena
+                </span>
+              </div>
+            </div>
             <div className="flex space-x-4">
               {socialLinks.map((item, i) => (
                 <a 
@@ -38,12 +68,15 @@ export const Footer: React.FC = () => {
           <div>
             <h3 className="font-bold text-white mb-6 uppercase tracking-wider">Quick Links</h3>
             <ul className="space-y-4 text-gray-400">
-              {['Home', 'Pricing', 'Games', 'About Us', 'Contact'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="hover:text-gg-cyan transition-colors relative group focus:text-gg-cyan focus:outline-none">
-                    {item}
+              {footerLinks.map((item) => (
+                <li key={item.label}>
+                  <button 
+                    onClick={() => scrollToSection(item.id)}
+                    className="hover:text-gg-cyan transition-colors relative group focus:text-gg-cyan focus:outline-none"
+                  >
+                    {item.label}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gg-cyan transition-all duration-300 group-hover:w-full" />
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -60,7 +93,7 @@ export const Footer: React.FC = () => {
 
           <div>
             <h3 className="font-bold text-white mb-6 uppercase tracking-wider">Newsletter</h3>
-            <form className="flex flex-col space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex flex-col space-y-4 max-w-xs mx-auto md:mx-0" onSubmit={(e) => e.preventDefault()}>
               <label htmlFor="newsletter-email" className="sr-only">Email Address</label>
               <input 
                 id="newsletter-email"

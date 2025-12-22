@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingPercent, setLoadingPercent] = useState(0);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [hackerMode, setHackerMode] = useState(false);
   
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -70,6 +71,37 @@ const App: React.FC = () => {
     return () => window.removeEventListener('toggleAdminDashboard', handleToggle);
   }, []);
 
+  // KONAMI CODE EASTER EGG
+  useEffect(() => {
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let cursor = 0;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === konamiCode[cursor]) {
+        cursor++;
+        if (cursor === konamiCode.length) {
+          setHackerMode(prev => !prev);
+          cursor = 0;
+          // Play sound or visual feedback
+          alert("SYSTEM HACKED: MATRIX MODE ENGAGED");
+        }
+      } else {
+        cursor = 0;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Inject Hacker Theme CSS variables
+  const themeStyles = hackerMode ? {
+    '--tw-color-gg-cyan': '#00FF41',
+    '--tw-color-gg-purple': '#008F11',
+    '--tw-color-gg-pink': '#003B00',
+    '--tw-color-gg-lime': '#00FF41',
+  } as React.CSSProperties : {};
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-gg-dark flex flex-col items-center justify-center z-50 overflow-hidden font-mono">
@@ -94,35 +126,30 @@ const App: React.FC = () => {
           }}
         />
 
-        <div className="relative z-40 text-center">
-          {/* Glitchy Text Container */}
+        <div className="relative z-40 text-center flex flex-col items-center">
+          {/* Logo Container (Text Version) */}
           <div className="relative mb-8 inline-block">
-             <motion.h1 
-               className="text-4xl md:text-7xl font-heading font-black text-white tracking-tighter"
+             <motion.div 
+               className="flex items-center justify-center gap-2"
                animate={{ 
                  textShadow: [
-                   "2px 2px 0px #FF006E, -2px -2px 0px #00D9FF",
-                   "-2px -2px 0px #FF006E, 2px 2px 0px #00D9FF", 
-                   "0px 0px 0px transparent" 
+                   "0 0 10px rgba(0,217,255,0)",
+                   "0 0 20px rgba(0,217,255,0.5)", 
+                   "0 0 10px rgba(0,217,255,0)" 
                  ],
-                 x: [0, -2, 2, 0],
-                 skewX: [0, 5, -5, 0]
                }}
                transition={{ 
-                 duration: 0.2, 
+                 duration: 2, 
                  repeat: Infinity, 
-                 repeatType: "mirror", 
-                 repeatDelay: 1.5 
                }}
              >
-               GG WELLPLAYED
-             </motion.h1>
-             <h1 className="absolute top-0 left-0 text-4xl md:text-7xl font-heading font-black text-gg-cyan opacity-50 animate-pulse translate-x-[2px] -z-10 tracking-tighter">
-               GG WELLPLAYED
-             </h1>
-             <h1 className="absolute top-0 left-0 text-4xl md:text-7xl font-heading font-black text-gg-pink opacity-50 animate-pulse -translate-x-[2px] -z-10 tracking-tighter">
-               GG WELLPLAYED
-             </h1>
+                <span className="font-heading font-black text-4xl md:text-6xl tracking-tighter text-white italic drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                  GG
+                </span>
+                <span className="font-heading font-black text-4xl md:text-6xl tracking-tighter text-gg-cyan italic drop-shadow-[0_0_15px_rgba(0,217,255,0.8)]">
+                  WELLPLAYED
+                </span>
+             </motion.div>
           </div>
 
           {/* Loading Bar */}
@@ -144,7 +171,32 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-gg-dark text-white relative md:cursor-none overflow-x-hidden selection:bg-gg-cyan selection:text-gg-dark font-sans">
+    <div 
+      className={`bg-gg-dark text-white relative md:cursor-none overflow-x-hidden selection:bg-gg-cyan selection:text-gg-dark font-sans ${hackerMode ? 'font-mono grayscale-[0.5]' : ''}`}
+      style={themeStyles}
+    >
+      {/* Global CSS variable overrides for Hacker Mode */}
+      {hackerMode && (
+        <style dangerouslySetInnerHTML={{__html: `
+          :root {
+            --color-gg-cyan: #00FF41 !important;
+            --color-gg-purple: #008F11 !important;
+            --color-gg-pink: #0D0208 !important;
+            --color-gg-lime: #00FF41 !important;
+          }
+          .text-gg-cyan { color: #00FF41 !important; }
+          .bg-gg-cyan { background-color: #00FF41 !important; }
+          .border-gg-cyan { border-color: #00FF41 !important; }
+          .shadow-gg-cyan { --tw-shadow-color: #00FF41 !important; }
+          
+          .text-gg-purple { color: #008F11 !important; }
+          .bg-gg-purple { background-color: #008F11 !important; }
+          .border-gg-purple { border-color: #008F11 !important; }
+
+           .text-gg-pink { color: #00FF41 !important; }
+          .bg-gg-pink { background-color: #008F11 !important; }
+        `}} />
+      )}
       
       {/* GLOBAL BACKGROUND GRID ANIMATION */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
@@ -158,6 +210,7 @@ const App: React.FC = () => {
              transformOrigin: 'top'
           }}
         />
+        {hackerMode && <div className="absolute inset-0 bg-green-500/10 mix-blend-overlay pointer-events-none animate-pulse" />}
       </div>
 
       <CustomCursor />
@@ -212,7 +265,7 @@ const App: React.FC = () => {
 
       {/* Scroll Progress Bar - Refined for best theme integration */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-gg-cyan via-gg-purple to-gg-pink origin-left z-[9999] shadow-[0_0_20px_rgba(0,217,255,0.6)]"
+        className={`fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-gg-cyan via-gg-purple to-gg-pink origin-left z-[9999] shadow-[0_0_20px_rgba(0,217,255,0.6)] ${hackerMode ? '!from-green-500 !via-green-700 !to-black' : ''}`}
         style={{ scaleX }}
       />
     </div>

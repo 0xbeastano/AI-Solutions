@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Cpu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -56,18 +56,20 @@ export const Navbar: React.FC = () => {
         }`}
       >
         <div className="container mx-auto px-4 max-w-7xl flex justify-between items-center relative z-[60]">
-          {/* Logo */}
+          {/* Logo Section */}
           <div 
-            className="flex items-center gap-3 cursor-pointer group select-none relative z-50"
+            className="flex items-center gap-2 cursor-pointer group select-none relative z-50"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="relative w-9 h-9 md:w-10 md:h-10 bg-gg-dark border border-gg-cyan flex items-center justify-center overflow-hidden transform skew-x-[-10deg]">
-              <Cpu className="text-gg-cyan w-5 h-5 group-hover:animate-spin" />
-              <div className="absolute inset-0 bg-gg-cyan/20 animate-pulse" />
+            {/* Text Logo with Neon Effect */}
+            <div className="flex flex-col leading-none">
+              <span className="font-heading font-black text-xl md:text-3xl tracking-widest text-white italic flex gap-2 shadow-black drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">
+                GG <span className="text-gg-cyan drop-shadow-[0_0_10px_rgba(0,217,255,0.8)]">WELLPLAYED</span>
+              </span>
+              <span className="hidden md:block text-[8px] font-mono text-gray-400 tracking-[0.4em] uppercase mt-1">
+                Premium Esports Arena
+              </span>
             </div>
-            <span className="font-heading font-black text-xl md:text-2xl text-white tracking-widest italic flex gap-1">
-              GG<span className="text-gg-cyan text-stroke-white">WP</span>
-            </span>
           </div>
 
           {/* Desktop Nav */}
@@ -112,6 +114,17 @@ export const Navbar: React.FC = () => {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[55] bg-gg-dark flex flex-col items-center justify-center space-y-8 touch-none overflow-hidden"
           >
+            {/* Explicit Close Button Inside Drawer */}
+            <div className="absolute top-4 right-4 z-[70]">
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-3 bg-gg-medium/50 rounded-full border border-gray-700 text-white hover:bg-gg-red hover:border-gg-red hover:text-black transition-all shadow-lg"
+                  aria-label="Close Menu"
+                >
+                    <X size={24} />
+                </button>
+            </div>
+
             {/* Background Effects */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gg-cyan/10 rounded-full blur-[80px]" />

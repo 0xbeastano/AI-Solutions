@@ -4,8 +4,9 @@ import { MapPin, Phone, Clock, Map as MapIcon } from 'lucide-react';
 
 export const LocationContact: React.FC = () => {
   return (
-    <section className="min-h-screen flex flex-col md:flex-row bg-gg-dark">
+    <section className="min-h-screen flex flex-col md:flex-row bg-gg-dark w-full">
       {/* Map Side */}
+      {/* Reduced height on mobile to 300px to avoid dominance, normal height on desktop */}
       <div className="w-full md:w-1/2 h-[300px] md:h-auto relative overflow-hidden border-b md:border-b-0 md:border-r border-gray-800 order-2 md:order-1">
          {/* Updated to use a Search Query Embed for better accuracy with dynamic addresses */}
          <iframe 
@@ -32,8 +33,9 @@ export const LocationContact: React.FC = () => {
       </div>
 
       {/* Form Side */}
-      <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-gg-dark order-1 md:order-2">
-        <h2 className="text-3xl md:text-4xl font-heading font-bold mb-6 md:mb-8">CONTACT US</h2>
+      {/* Adjusted padding: p-6 on mobile, p-16 on desktop */}
+      <div className="w-full md:w-1/2 p-6 md:p-16 flex flex-col justify-center bg-gg-dark order-1 md:order-2">
+        <h2 className="text-3xl md:text-4xl font-heading font-bold mb-6 md:mb-8 mt-8 md:mt-0">CONTACT US</h2>
         
         <form className="space-y-6 md:space-y-6 mb-8 md:mb-12">
           <div>
@@ -42,7 +44,8 @@ export const LocationContact: React.FC = () => {
               id="contact-name"
               type="text" 
               placeholder="YOUR NAME" 
-              className="w-full bg-transparent border-b border-gray-700 py-3 text-white focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono text-base"
+              // Added text-base
+              className="w-full bg-transparent border-b border-gray-700 py-3 text-white text-base focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono"
             />
           </div>
           <div>
@@ -51,7 +54,8 @@ export const LocationContact: React.FC = () => {
               id="contact-email"
               type="email" 
               placeholder="YOUR EMAIL" 
-              className="w-full bg-transparent border-b border-gray-700 py-3 text-white focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono text-base"
+               // Added text-base
+              className="w-full bg-transparent border-b border-gray-700 py-3 text-white text-base focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono"
             />
           </div>
           <div>
@@ -60,7 +64,8 @@ export const LocationContact: React.FC = () => {
               id="contact-message"
               placeholder="MESSAGE" 
               rows={4}
-              className="w-full bg-transparent border-b border-gray-700 py-3 text-white focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono text-base"
+               // Added text-base
+              className="w-full bg-transparent border-b border-gray-700 py-3 text-white text-base focus:border-gg-cyan focus:outline-none transition-colors placeholder-gray-500 font-mono"
             ></textarea>
           </div>
           <motion.button 

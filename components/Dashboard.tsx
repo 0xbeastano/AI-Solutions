@@ -50,7 +50,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
       setBookings(sorted);
       calculateStats(sorted);
     } catch (e) {
-      console.error("Failed to load bookings");
+      console.warn("Failed to load bookings or storage unavailable");
+      setBookings([]);
+      calculateStats([]);
     }
   };
 
@@ -112,8 +114,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
 
   const clearHistory = () => {
     if(confirm("Are you sure you want to clear all booking history? This cannot be undone.")) {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      loadData();
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        loadData();
+      } catch (e) {
+        console.warn("Failed to clear history");
+      }
     }
   };
 
