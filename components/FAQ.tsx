@@ -24,48 +24,96 @@ const faqData = [
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <section className="py-20 bg-gg-dark relative">
-      <div className="container mx-auto px-4 max-w-3xl">
+    <section className="py-20 bg-gg-dark relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gg-purple/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-gg-cyan/5 rounded-full blur-[80px] pointer-events-none" />
+
+      <div className="container mx-auto px-4 max-w-3xl relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-heading font-bold text-white flex items-center justify-center gap-3">
             <HelpCircle className="text-gg-cyan" /> FREQUENTLY ASKED
           </h2>
         </div>
 
-        <div className="space-y-4">
-          {faqData.map((item, index) => (
-            <div 
-              key={index}
-              className="border border-gray-800 rounded-lg overflow-hidden bg-gg-medium hover:border-gg-purple/50 transition-colors duration-300"
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
+        <motion.div 
+          className="space-y-4"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+        >
+          {faqData.map((item, index) => {
+            const isOpen = openIndex === index;
+            const contentId = `faq-content-${index}`;
+            const headerId = `faq-header-${index}`;
+
+            return (
+              <motion.div 
+                key={index}
+                variants={itemVariants}
+                className={`border rounded-lg overflow-hidden transition-all duration-300 ${
+                  isOpen 
+                    ? 'bg-gg-medium border-gg-cyan/50 shadow-[0_0_15px_rgba(0,217,255,0.1)]' 
+                    : 'bg-gg-medium/50 border-gray-800 hover:border-gg-purple/50'
+                }`}
               >
-                <span className="font-bold text-white text-lg">{item.question}</span>
-                <ChevronDown 
-                  className={`text-gg-cyan transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`} 
-                />
-              </button>
-              
-              <AnimatePresence>
-                {openIndex === index && (
+                <button
+                  id={headerId}
+                  aria-expanded={isOpen}
+                  aria-controls={contentId}
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="w-full flex justify-between items-center p-6 text-left focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gg-cyan rounded-t-lg group"
+                >
+                  <span className={`font-bold text-lg transition-colors duration-300 ${isOpen ? 'text-gg-cyan' : 'text-white group-hover:text-gray-200'}`}>
+                    {item.question}
+                  </span>
                   <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className={`flex-shrink-0 ml-4 ${isOpen ? 'text-gg-cyan' : 'text-gray-500 group-hover:text-white'}`}
                   >
-                    <div className="p-6 pt-0 text-gray-400 font-mono text-sm leading-relaxed border-t border-gray-800/50">
-                      {item.answer}
-                    </div>
+                    <ChevronDown size={20} />
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
-        </div>
+                </button>
+                
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      id={contentId}
+                      role="region"
+                      aria-labelledby={headerId}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <div className="p-6 pt-0 text-gray-400 font-mono text-sm leading-relaxed border-t border-gray-700/50">
+                        {item.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </div>
     </section>
   );

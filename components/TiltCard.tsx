@@ -14,11 +14,11 @@ export const TiltCard: React.FC<TiltCardProps> = ({ children, className = "", gl
   const [glarePosition, setGlarePosition] = useState({ x: 50, y: 50 });
   const [opacity, setOpacity] = useState(0);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const calculateTilt = (clientX: number, clientY: number) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     
     // Calculate percentage position
     const xPct = x / rect.width;
@@ -37,7 +37,19 @@ export const TiltCard: React.FC<TiltCardProps> = ({ children, className = "", gl
     setOpacity(1);
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    calculateTilt(e.clientX, e.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Prevent default to avoid scrolling while tilting if needed, but usually better to allow scroll
+    // e.preventDefault(); 
+    if (e.touches[0]) {
+        calculateTilt(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleReset = () => {
     setRotateX(0);
     setRotateY(0);
     setOpacity(0);
@@ -48,7 +60,10 @@ export const TiltCard: React.FC<TiltCardProps> = ({ children, className = "", gl
       ref={ref}
       className={`relative preserve-3d transition-transform duration-200 ease-out will-change-transform ${className}`}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={handleReset}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleReset}
+      onTouchCancel={handleReset}
       style={{
         transformStyle: 'preserve-3d',
         transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1, 1, 1)`

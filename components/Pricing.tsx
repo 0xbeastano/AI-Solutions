@@ -55,20 +55,20 @@ export const Pricing: React.FC = () => {
 
   return (
     <section id="pricing" className="py-12 md:py-24 bg-gg-dark relative overflow-hidden">
-      <div className="container mx-auto px-4 max-w-6xl relative z-10">
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="text-center mb-10 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-heading font-bold mb-6 md:mb-8">PRICING PLANS</h2>
           
-          <div className="inline-flex bg-gg-medium rounded-full p-1 border border-gg-cyan/30 cursor-pointer shadow-lg max-w-full overflow-hidden touch-manipulation">
+          <div className="inline-flex flex-wrap justify-center gap-2 bg-gg-medium rounded-2xl md:rounded-full p-2 border border-gg-cyan/30 cursor-pointer shadow-lg w-full md:w-auto touch-manipulation">
             <button
               onClick={() => setActiveType('PC')}
-              className={`px-6 py-2 md:px-8 md:py-3 rounded-full font-bold transition-all duration-300 relative z-20 min-w-[100px] md:min-w-[150px] text-xs md:text-base ${activeType === 'PC' ? 'bg-gg-cyan text-gg-dark shadow-[0_0_15px_#00D9FF]' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 md:flex-none px-6 py-3 rounded-xl md:rounded-full font-bold transition-all duration-300 relative z-20 min-w-[120px] text-xs md:text-base ${activeType === 'PC' ? 'bg-gg-cyan text-gg-dark shadow-[0_0_15px_#00D9FF]' : 'text-gray-400 hover:text-white'}`}
             >
               PC GAMING
             </button>
             <button
               onClick={() => setActiveType('CONSOLE')}
-              className={`px-6 py-2 md:px-8 md:py-3 rounded-full font-bold transition-all duration-300 relative z-20 min-w-[100px] md:min-w-[150px] text-xs md:text-base ${activeType === 'CONSOLE' ? 'bg-gg-purple text-white shadow-[0_0_15px_#9D00FF]' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 md:flex-none px-6 py-3 rounded-xl md:rounded-full font-bold transition-all duration-300 relative z-20 min-w-[120px] text-xs md:text-base ${activeType === 'CONSOLE' ? 'bg-gg-purple text-white shadow-[0_0_15px_#9D00FF]' : 'text-gray-400 hover:text-white'}`}
             >
               CONSOLE
             </button>
@@ -87,10 +87,10 @@ export const Pricing: React.FC = () => {
                 animate={{ opacity: 1, scale: plan.isBestValue ? 1.02 : 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
-                className="h-full"
+                className="h-full w-full"
               >
                 <TiltCard 
-                  className={`bg-gg-medium rounded-2xl p-6 md:p-8 border-2 ${plan.color} relative h-full flex flex-col justify-between ${plan.isBestValue ? `shadow-xl ${plan.glow}` : ''}`}
+                  className={`bg-gg-medium rounded-2xl p-6 md:p-8 border-2 ${plan.color} relative h-full flex flex-col justify-between w-full ${plan.isBestValue ? `shadow-xl ${plan.glow}` : ''}`}
                   glowColor={plan.glowColor}
                 >
                   <div>

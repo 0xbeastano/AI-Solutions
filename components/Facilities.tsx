@@ -40,7 +40,7 @@ export const Facilities: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-gg-medium relative">
+    <section className="py-12 md:py-24 bg-gg-medium relative w-full overflow-hidden">
       <div className="container mx-auto px-4 max-w-7xl">
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,8 @@ export const Facilities: React.FC = () => {
           WORLD CLASS FACILITIES
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        {/* Updated Grid: 1 col mobile, 2 cols tablet (md), 3 cols laptop (lg) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 justify-items-center">
           {facilities.map((facility, index) => (
             <motion.div
               key={index}
@@ -59,7 +60,7 @@ export const Facilities: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.15, duration: 0.5 }}
               whileHover={{ y: -5 }}
-              className="bg-gg-dark rounded-xl border-2 border-transparent relative overflow-hidden group"
+              className="bg-gg-dark rounded-xl border-2 border-transparent relative overflow-hidden group w-full max-w-md lg:max-w-none"
               style={{
                 boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)"
               }}
@@ -73,7 +74,7 @@ export const Facilities: React.FC = () => {
                     src={facility.image} 
                     alt={facility.title} 
                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 relative z-0"
-                    loading="eager"
+                    loading="lazy"
                     onError={(e) => handleImageError(e, facility.fallback)}
                   />
                   {/* Floating Icon */}
@@ -94,7 +95,7 @@ export const Facilities: React.FC = () => {
                   </ul>
                   <button className="text-gg-cyan font-bold text-sm tracking-widest uppercase group/btn relative p-2 md:p-0">
                     Learn More
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gg-cyan transition-all duration-300 group-hover/btn:w-full" />
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gg-cyan transition-all duration-300 group-hover:w-full" />
                   </button>
                 </div>
               </div>

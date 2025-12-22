@@ -1,64 +1,117 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { TiltCard } from './TiltCard';
 
-// Professional Gameplay Images (Unsplash High Quality IDs)
+// Official Game Cover Art (Steam Library Vertical Assets & Twitch Box Art)
 const games = [
   { 
     title: "Valorant", 
     genre: "Tac-Shooter", 
-    // Neon sci-fi shooter vibe
-    img: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop" 
+    // Official Twitch Box Art
+    img: "https://static-cdn.jtvnw.net/ttv-boxart/516575-600x800.jpg" 
   },
   { 
     title: "Counter-Strike 2", 
     genre: "FPS", 
-    // Tactical military vibe
-    img: "https://images.unsplash.com/photo-1599933397621-0e7d69b36582?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/730/library_600x900.jpg" 
   },
   { 
     title: "Forza Horizon 5", 
     genre: "Racing", 
-    // Supercar / Racing vibe
-    img: "https://images.unsplash.com/photo-1547924667-62ca45b7e2a8?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/1551360/library_600x900.jpg" 
   },
   { 
     title: "Dota 2", 
     genre: "MOBA", 
-    // Fantasy / Strategy vibe
-    img: "https://images.unsplash.com/photo-1548685913-fe6678babe8d?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/570/library_600x900.jpg" 
   },
   { 
     title: "Call of Duty: MW3", 
     genre: "FPS / Warzone", 
-    // War zone / Soldier vibe
-    img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/2519060/library_600x900.jpg" 
   },
   { 
     title: "Apex Legends", 
     genre: "Battle Royale", 
-    // Sci-fi armor vibe
-    img: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/1172470/library_600x900.jpg" 
   },
   { 
     title: "Tekken 8", 
     genre: "Fighting", 
-    // Arcade stick / Fighting vibe
-    img: "https://images.unsplash.com/photo-1593305841991-05c29736f87e?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/1778820/library_600x900.jpg" 
   },
   { 
     title: "EA SPORTS FC™ 24", 
     genre: "Sports", 
-    // Stadium / Soccer vibe
-    img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/2195250/library_600x900.jpg" 
   },
   { 
     title: "Cyberpunk 2077", 
     genre: "RPG", 
-    // Neon City / Night vibe
-    img: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=800&auto=format&fit=crop" 
+    // Official Steam Library Asset
+    img: "https://steamcdn-a.akamaihd.net/steam/apps/1091500/library_600x900.jpg" 
   }
 ];
+
+const GameCard: React.FC<{ game: typeof games[0] }> = ({ game }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05, y: -8, zIndex: 10 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="relative flex-shrink-0 w-36 h-56 md:w-64 md:h-96 rounded-xl cursor-pointer touch-manipulation group"
+    >
+      <TiltCard 
+        className="w-full h-full rounded-xl overflow-hidden border border-gray-800 shadow-lg bg-gray-900 transition-all duration-300 group-hover:border-gg-cyan group-hover:shadow-[0_0_30px_rgba(0,217,255,0.6)]"
+        glowColor="#00D9FF"
+      >
+        {/* Background placeholder if image loads slow */}
+        <div className="absolute inset-0 bg-gray-800" />
+        
+        <img 
+          src={game.img} 
+          alt={game.title} 
+          onLoad={() => setIsLoaded(true)}
+          className={`w-full h-full object-cover relative z-0 transition-all duration-700 group-hover:scale-110 ${
+            isLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
+          }`}
+          loading="lazy" 
+          decoding="async"
+        />
+        
+        {/* 
+           Gradient Overlay:
+           - Stronger gradient (opacity-100) at bottom to ensure white text is readable 
+             against colorful official game covers.
+        */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gg-dark via-transparent to-transparent opacity-90 transition-opacity duration-300 z-10" />
+        
+        {/* 
+           Text Content:
+           - Neon accent on hover
+           - Strong text shadow for readability
+        */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 z-20">
+          <span className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-gg-lime mb-1 block drop-shadow-[0_2px_2px_rgba(0,0,0,1)] group-hover:text-gg-cyan transition-colors">
+            {game.genre}
+          </span>
+          <h3 className="text-sm md:text-lg font-bold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,1)] group-hover:text-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            {game.title}
+          </h3>
+        </div>
+      </TiltCard>
+    </motion.div>
+  );
+};
 
 export const GamesLibrary: React.FC = () => {
   return (
@@ -80,36 +133,7 @@ export const GamesLibrary: React.FC = () => {
         >
           {/* Duplicated list for infinite scroll - Using unique keys to prevent React warnings */}
           {[...games, ...games].map((game, index) => (
-            <motion.div
-              key={`${game.title}-${index}`}
-              whileHover={{ scale: 1.05, zIndex: 10 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative flex-shrink-0 w-36 h-56 md:w-64 md:h-96 rounded-xl cursor-pointer touch-manipulation"
-            >
-              <TiltCard 
-                className="w-full h-full rounded-xl overflow-hidden border border-gray-800 shadow-2xl group hover:border-gg-cyan transition-colors duration-300"
-                glowColor="#00D9FF"
-              >
-                <div className="absolute inset-0 bg-gray-900" />
-                <img 
-                  src={game.img} 
-                  alt={game.title} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                  loading="lazy" 
-                  decoding="async"
-                />
-                {/* Always visible gradient on mobile for readability, dynamic on desktop */}
-                <div className="absolute inset-0 bg-gradient-to-t from-gg-dark via-transparent to-transparent opacity-80 md:opacity-0 group-hover:opacity-90 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 translate-y-0 md:translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                  <span className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-gg-lime mb-1 block">
-                    {game.genre}
-                  </span>
-                  <h3 className="text-sm md:text-lg font-bold text-white leading-tight">
-                    {game.title}
-                  </h3>
-                </div>
-              </TiltCard>
-            </motion.div>
+            <GameCard key={`${game.title}-${index}`} game={game} />
           ))}
         </motion.div>
       </div>

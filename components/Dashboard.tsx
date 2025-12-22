@@ -50,7 +50,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
       setBookings(sorted);
       calculateStats(sorted);
     } catch (e) {
-      console.error("Failed to load bookings");
+      console.warn("Failed to load bookings or storage unavailable");
+      setBookings([]);
+      calculateStats([]);
     }
   };
 
@@ -79,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
     if (str.match(/^[=+\-@]/)) {
       return `'${str}`;
     }
-    return str;
+    return str.replace(/"/g, '""'); // Escape double quotes
   };
 
   const exportCSV = () => {
@@ -88,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
     const headers = ["ID", "Name", "Phone", "Date", "Platform", "Duration", "Price", "Timestamp"];
     const rows = bookings.map(b => [
       sanitizeForCSV(b.id),
-      sanitizeForCSV(b.customerName),
+      `"${sanitizeForCSV(b.customerName)}"`, // Wrap in quotes for safety
       sanitizeForCSV(b.phoneNumber),
       sanitizeForCSV(b.date),
       sanitizeForCSV(b.platform),
@@ -97,23 +99,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ isOpen, onClose }) => {
       new Date(b.timestamp).toLocaleString()
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
+    const csvContent = headers.join(",") + "\n" 
       + rows.map(e => e.join(",")).join("\n");
 
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.href = url;
     link.setAttribute("download", `ggwellplayed_bookings_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const clearHistory = () => {
     if(confirm("Are you sure you want to clear all booking history? This cannot be undone.")) {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      loadData();
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        loadData();
+      } catch (e) {
+        console.warn("Failed to clear history");
+      }
     }
   };
 

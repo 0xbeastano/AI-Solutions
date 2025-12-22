@@ -1,441 +1,507 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
-import { Calendar, Clock, Monitor, Gamepad, Loader2, CheckCircle, AlertCircle, User, Phone, Map } from 'lucide-react';
-import { Booking as BookingType } from '../types';
+import { Calendar, Monitor, Gamepad, User, Phone, CheckCircle, Loader2, CreditCard, Clock, Zap, ChevronRight, ChevronDown } from 'lucide-react';
+import { motion, animate, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { SeatMap } from './SeatMap';
+import { Booking as BookingType } from '../types';
 
 const WHATSAPP_NUMBER = "918888237925";
 const LOCAL_STORAGE_KEY = 'ggwellplayed_bookings';
-const RATE_LIMIT_KEY = 'ggwellplayed_ratelimit';
 
 const TIERS = [
-  { id: 'mid', name: 'Mid-End 144Hz', type: 'PC', basePrice: 50, label: 'Mid-End 144Hz PC' },
-  { id: 'high', name: 'High-End 240Hz', type: 'PC', basePrice: 70, label: 'High-End 240Hz PC' },
-  { id: 'ps4', name: 'Console PS4', type: 'CONSOLE', basePrice: 100, label: 'PlayStation 4' },
+  { 
+    id: 'mid', 
+    name: 'Standard PC', 
+    type: 'PC', 
+    basePrice: 50, 
+    label: 'Mid-End 144Hz', 
+    borderColor: 'border-gg-purple', 
+    glowColor: 'shadow-gg-purple/50',
+    textColor: 'text-gg-purple',
+    accent: '#9D00FF'
+  },
+  { 
+    id: 'high', 
+    name: 'Elite PC', 
+    type: 'PC', 
+    basePrice: 70, 
+    label: 'High-End 240Hz', 
+    borderColor: 'border-gg-cyan', 
+    glowColor: 'shadow-gg-cyan/50',
+    textColor: 'text-gg-cyan',
+    accent: '#00D9FF'
+  },
+  { 
+    id: 'ps4', 
+    name: 'PS5 Console', 
+    type: 'CONSOLE', 
+    basePrice: 100, 
+    label: 'Console PS5', 
+    borderColor: 'border-gg-pink', 
+    glowColor: 'shadow-gg-pink/50',
+    textColor: 'text-gg-pink',
+    accent: '#FF006E'
+  },
 ];
 
 const DURATIONS = [
-  { id: 1, label: '1H', value: 1, multiplier: 1, text: '1 Hour' },
-  { id: 3, label: '3H', value: 3, multiplier: 3.0, text: '3 Hours' },
-  { id: 5, label: '5H', value: 5, multiplier: 4.5, text: '5 Hours' },
-  { id: 8, label: '8H', value: 8, multiplier: 6.8, text: '8 Hours' },
+  { id: 1, label: '1H', fullLabel: '1 Hour', value: 1, multiplier: 1 },
+  { id: 3, label: '3H', fullLabel: '3 Hours', value: 3, multiplier: 3.0 },
+  { id: 6, label: '6H', fullLabel: '6 Hours', value: 6, multiplier: 5.5, isBestValue: true },
+  { id: 8, label: '8H', fullLabel: '8 Hours', value: 8, multiplier: 7.0 },
 ];
 
-const AnimatedCounter = ({ value }: { value: number }) => {
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) => Math.round(latest));
-  const [glow, setGlow] = useState(false);
+// --- UTILITY: GENERATE TIME SLOTS (9:30 AM to 10:00 PM) ---
+const generateTimeSlots = () => {
+  const slots: string[] = [];
+  const startHour = 9;
+  const startMin = 30;
+  const endHour = 22; // 10 PM
 
+  let currentH = startHour;
+  let currentM = startMin;
+
+  while (currentH < endHour || (currentH === endHour && currentM === 0)) {
+    const period = currentH >= 12 ? 'PM' : 'AM';
+    let displayH = currentH > 12 ? currentH - 12 : currentH;
+    if (displayH === 0) displayH = 12; // Handle 12 PM/AM edge case if needed, though loop starts at 9
+    
+    const displayM = currentM === 0 ? '00' : currentM;
+    
+    slots.push(`${displayH}:${displayM} ${period}`);
+
+    currentM += 30;
+    if (currentM === 60) {
+      currentM = 0;
+      currentH++;
+    }
+  }
+  return slots;
+};
+
+const TIME_SLOTS = generateTimeSlots();
+
+// --- ANIMATED COUNTER COMPONENT ---
+const PriceCounter = ({ value, color }: { value: number, color: string }) => {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, latest => Math.round(latest));
+  const [isAnimating, setIsAnimating] = useState(false);
+  
   useEffect(() => {
-    const controls = animate(count, value, { duration: 0.8, ease: "circOut" });
-    setGlow(true);
-    const timeout = setTimeout(() => setGlow(false), 800);
-    return () => {
-      controls.stop();
-      clearTimeout(timeout);
-    };
+    setIsAnimating(true);
+    const controls = animate(count, value, { 
+        duration: 0.8, 
+        ease: "circOut",
+        onComplete: () => setIsAnimating(false)
+    });
+    return controls.stop;
   }, [value, count]);
 
   return (
     <motion.span 
-      className={`inline-block transition-colors duration-300 ${glow ? 'text-gg-lime drop-shadow-[0_0_15px_rgba(204,255,0,0.6)]' : 'text-white'}`}
+        className="inline-block transition-colors duration-200"
+        style={{ 
+            color: isAnimating ? color : '#FFFFFF',
+            textShadow: isAnimating ? `0 0 15px ${color}` : 'none'
+        }}
     >
-      {rounded}
+        {rounded}
     </motion.span>
   );
 };
 
 export const Booking: React.FC = () => {
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const mountTime = useRef<number>(Date.now());
-
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [date, setDate] = useState('');
-  const [honeyPot, setHoneyPot] = useState('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState('');
   
   const [selectedTier, setSelectedTier] = useState(TIERS[0]);
-  const [selectedDuration, setSelectedDuration] = useState(DURATIONS[0]);
+  const [selectedDuration, setSelectedDuration] = useState(DURATIONS[1]); // Default 3H
   const [selectedSeatId, setSelectedSeatId] = useState<string | null>(null);
-  const [totalPrice, setTotalPrice] = useState(50);
-  
-  const [errors, setErrors] = useState<{date?: string; name?: string; phone?: string; general?: string}>({});
+  const [totalPrice, setTotalPrice] = useState(150);
   const [status, setStatus] = useState<'IDLE' | 'PROCESSING' | 'REDIRECTING'>('IDLE');
 
-  useEffect(() => {
-    const handleTierSelection = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const tierId = customEvent.detail;
-      const tier = TIERS.find(t => t.id === tierId);
-      if (tier) setSelectedTier(tier);
-    };
-    window.addEventListener('selectBookingTier', handleTierSelection);
-    return () => window.removeEventListener('selectBookingTier', handleTierSelection);
-  }, []);
+  // Helper to get today's date in local time for min attribute
+  const getTodayLocal = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
+  // Calculate price when tier or duration changes
   useEffect(() => {
-    const calculated = Math.ceil(selectedTier.basePrice * selectedDuration.multiplier);
-    setTotalPrice(calculated);
+    setTotalPrice(Math.ceil(selectedTier.basePrice * selectedDuration.multiplier));
   }, [selectedTier, selectedDuration]);
+
+  // Listen for 'selectBookingTier' event from Pricing component
+  useEffect(() => {
+    const handleTierSelect = (e: CustomEvent) => {
+        const tierId = e.detail;
+        const tier = TIERS.find(t => t.id === tierId);
+        if (tier) setSelectedTier(tier);
+    };
+    window.addEventListener('selectBookingTier', handleTierSelect as EventListener);
+    return () => window.removeEventListener('selectBookingTier', handleTierSelect as EventListener);
+  }, []);
 
   const handleSeatSelect = (seatId: string, tierId: string) => {
     setSelectedSeatId(seatId);
+    // Auto-select the corresponding tier
     const tier = TIERS.find(t => t.id === tierId);
-    if (tier) setSelectedTier(tier);
-  };
-
-  const checkRateLimit = (): boolean => {
-    try {
-        const stored = localStorage.getItem(RATE_LIMIT_KEY);
-        const history = stored ? JSON.parse(stored) : [];
-        if (!Array.isArray(history)) return true; // Safety check
-        const now = Date.now();
-        const windowTime = 5 * 60 * 1000;
-        const limit = 3;
-        const recentAttempts = history.filter((timestamp: number) => now - timestamp < windowTime);
-        if (recentAttempts.length >= limit) return false;
-        recentAttempts.push(now);
-        localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentAttempts));
-        return true;
-    } catch (e) {
-        // If storage is corrupted, reset it and allow processing
-        localStorage.removeItem(RATE_LIMIT_KEY);
-        return true; 
+    if (tier) {
+        setSelectedTier(tier);
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: {date?: string; name?: string; phone?: string; general?: string} = {};
-    let isValid = true;
-    if (honeyPot !== '') return false;
-    if (Date.now() - mountTime.current < 2000) return false;
-    if (!customerName.trim()) { newErrors.name = "Name is required"; isValid = false; }
-    if (!phoneNumber.trim() || !/^\d{10}$/.test(phoneNumber)) { newErrors.phone = "Enter valid 10-digit number"; isValid = false; }
-    if (!date) {
-      newErrors.date = "Please select a booking date"; isValid = false;
-    } else {
-      const [year, month, day] = date.split('-').map(Number);
-      const selectedDate = new Date(year, month - 1, day);
-      const now = new Date();
-      // Reset time for comparison
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      if (selectedDate.getTime() < today.getTime()) { 
-        newErrors.date = "Date cannot be in the past"; 
-        isValid = false; 
-      }
-      if (selectedDate.getTime() === today.getTime() && now.getHours() >= 22) { 
-        newErrors.date = "Bookings closed for today (after 10 PM)"; 
-        isValid = false; 
-      }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName || !phoneNumber || !bookingDate || !bookingTime || !selectedSeatId) {
+        alert("Please fill in all details, select a date/time, and choose a seat.");
+        return;
     }
-    setErrors(newErrors);
-    return isValid;
-  };
 
-  const handleConfirmBooking = () => {
-    if (!validateForm()) return;
-    if (!checkRateLimit()) { setErrors({ general: "Too many attempts. Please try again in 5 minutes." }); return; }
     setStatus('PROCESSING');
-    
-    const bookingID = `BK${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    const [year, month, day] = date.split('-').map(Number);
-    const dateObj = new Date(year, month - 1, day);
-    const formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    const bookingData: BookingType = {
-      id: bookingID,
-      customerName,
-      phoneNumber,
-      date: date,
-      platform: selectedTier.name,
-      duration: selectedDuration.text,
-      price: totalPrice,
-      timestamp: Date.now(),
-      status: 'PENDING'
-    };
-
-    try {
-      const existingData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      let bookings: BookingType[] = [];
-      if (existingData) {
-          try {
-              bookings = JSON.parse(existingData);
-              if (!Array.isArray(bookings)) bookings = [];
-          } catch {
-              bookings = [];
-          }
-      }
-      bookings.push(bookingData);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(bookings));
-      window.dispatchEvent(new Event('bookingUpdated'));
-    } catch (error) {
-        console.error("Storage error", error);
-    }
 
     setTimeout(() => {
-      setStatus('REDIRECTING');
-      const message = `*NEW BOOKING REQUEST* 🎮\n\n*Ref ID:* ${bookingID}\n*Name:* ${customerName}\n*Phone:* ${phoneNumber}\n*Date:* ${formattedDate}\n*Platform:* ${selectedTier.label}\n${selectedSeatId ? `*Seat Preference:* ${selectedSeatId}` : ''}\n*Duration:* ${selectedDuration.text}\n*Total:* ₹${totalPrice}\n\nPlease confirm this slot.`;
-      window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`, '_blank');
-      setTimeout(() => {
-        setStatus('IDLE');
-        setCustomerName('');
-        setPhoneNumber('');
-        setDate('');
-        setSelectedSeatId(null);
-        setErrors({});
-      }, 500);
-    }, 1000);
-  };
+        const fullDateTime = `${bookingDate} ${bookingTime}`;
+        
+        const newBooking: BookingType = {
+            id: `BK-${Date.now().toString().slice(-6)}`,
+            customerName,
+            phoneNumber,
+            date: fullDateTime,
+            platform: selectedTier.name,
+            duration: selectedDuration.fullLabel,
+            price: totalPrice,
+            timestamp: Date.now(),
+            status: 'CONFIRMED'
+        };
 
-  const getTodayString = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        try {
+            const existing = localStorage.getItem(LOCAL_STORAGE_KEY);
+            const bookings = existing ? JSON.parse(existing) : [];
+            bookings.push(newBooking);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(bookings));
+            window.dispatchEvent(new Event('bookingUpdated'));
+            
+            setStatus('REDIRECTING');
+            
+            const message = `*NEW BOOKING REQUEST*%0A------------------%0A👤 Name: ${customerName}%0A📱 Phone: ${phoneNumber}%0A📅 Date: ${bookingDate}%0A⏰ Time: ${bookingTime}%0A🎮 Seat: ${selectedSeatId}%0A⚙️ Rig: ${selectedTier.name}%0A⏱️ Duration: ${selectedDuration.fullLabel}%0A💰 Total: ₹${totalPrice}`;
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+            
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank');
+                setCustomerName('');
+                setPhoneNumber('');
+                setBookingDate('');
+                setBookingTime('');
+                setSelectedSeatId(null);
+                setStatus('IDLE');
+            }, 1500);
+
+        } catch (error) {
+            console.error("Booking Error", error);
+            setStatus('IDLE');
+            alert("Error saving booking locally.");
+        }
+    }, 2000);
   };
 
   return (
-    <section id="booking" className="py-12 md:py-24 bg-gg-medium border-t border-gg-cyan/10 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gg-purple/5 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-gg-cyan/5 rounded-full blur-3xl pointer-events-none transform -translate-x-1/2 translate-y-1/2" />
+    <section id="booking" className="py-12 md:py-24 bg-gg-dark relative w-full overflow-hidden">
+        <div className="container mx-auto px-4 max-w-7xl">
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-8 md:mb-10"
+            >
+                <h2 className="text-3xl md:text-5xl font-heading font-bold text-white mb-2">
+                    BOOK YOUR <span className="text-gg-cyan">SESSION</span>
+                </h2>
+                <p className="text-gray-400 font-mono text-xs md:text-sm">Select your rig from the map below or fill out the form directly.</p>
+            </motion.div>
 
-      <div className="container mx-auto px-4 max-w-6xl relative z-10">
-        <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true }}
-           className="text-center mb-8 md:mb-12"
-        >
-          <h2 className="text-3xl md:text-5xl font-heading font-bold mb-4">BOOK YOUR <span className="text-gg-cyan">SESSION</span></h2>
-          <p className="text-gray-400 font-mono text-xs md:text-lg">Select your rig from the map below or fill out the form directly.</p>
-        </motion.div>
-
-        <div className="bg-gg-dark rounded-xl md:rounded-2xl p-4 md:p-8 shadow-2xl border border-gray-800">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            
-            {/* Visual Seat Map */}
-            <div className="flex flex-col relative">
-              <h3 className="flex items-center text-gg-cyan font-bold mb-4 tracking-wide text-sm md:text-base">
-                <Map className="mr-2 w-4 h-4" /> INTERACTIVE FLOOR PLAN
-              </h3>
-              
-              {/* Mobile Swipe Hint - Optimized for Mobile */}
-              <motion.div 
-                 initial={{ opacity: 0 }}
-                 whileInView={{ opacity: 1 }}
-                 viewport={{ once: true, amount: 0.5 }} // Only trigger when 50% in view
-                 className="md:hidden flex items-center justify-center gap-2 mb-2 text-gg-cyan/80 text-[10px] font-bold tracking-widest animate-pulse"
-              >
-                 <span>&larr; SWIPE MAP &rarr;</span>
-              </motion.div>
-
-              <SeatMap 
-                selectedSeatId={selectedSeatId}
-                onSeatSelect={handleSeatSelect}
-              />
-              <p className="text-xs text-gray-500 mt-3 font-mono">
-                *Click a seat to automatically select platform and tier.
-              </p>
-            </div>
-
-            {/* Form Section */}
-            <div className="space-y-6 md:space-y-8">
-              
-              <input 
-                type="text" 
-                value={honeyPot}
-                onChange={(e) => setHoneyPot(e.target.value)}
-                style={{ opacity: 0, position: 'absolute', top: 0, left: 0, height: 0, width: 0, zIndex: -1 }}
-                tabIndex={-1}
-              />
-
-              {/* Personal Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="booking-name" className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
-                    <User className="mr-2 w-4 h-4" /> NAME
-                  </label>
-                  <input 
-                    id="booking-name"
-                    type="text" 
-                    value={customerName}
-                    onChange={(e) => {
-                      setCustomerName(e.target.value);
-                      if(errors.name) setErrors({...errors, name: undefined});
-                    }}
-                    // 'text-base' is critical for preventing iOS zoom on focus
-                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 transition-all ${errors.name ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
-                    placeholder="Enter your name"
-                  />
-                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-                </div>
-                <div>
-                  <label htmlFor="booking-phone" className="flex items-center text-gray-400 font-bold mb-2 text-xs md:text-sm tracking-wider">
-                    <Phone className="mr-2 w-4 h-4" /> PHONE
-                  </label>
-                  <input 
-                    id="booking-phone"
-                    type="tel" 
-                    value={phoneNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setPhoneNumber(val);
-                      if(errors.phone) setErrors({...errors, phone: undefined});
-                    }}
-                    className={`w-full bg-gg-medium border rounded-lg p-3 text-base text-white focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 transition-all ${errors.phone ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
-                    placeholder="10-digit number"
-                  />
-                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-                </div>
-              </div>
-
-              {/* Date Selection */}
-              <div>
-                <label 
-                  htmlFor="booking-date"
-                  className="flex items-center text-gg-cyan font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl"
-                >
-                  <Calendar className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> SELECT DATE
-                </label>
-                <input 
-                    id="booking-date"
-                    ref={dateInputRef}
-                    type="date" 
-                    min={getTodayString()}
-                    value={date}
-                    onChange={(e) => {
-                      setDate(e.target.value);
-                      if(errors.date) setErrors({...errors, date: undefined});
-                    }}
-                    style={{ colorScheme: 'dark' }}
-                    // Increased padding for better touch target on mobile
-                    className={`w-full bg-gg-medium border rounded-xl p-4 md:p-5 text-base md:text-xl text-white font-mono cursor-pointer focus:outline-none focus:ring-2 focus:ring-gg-cyan/50 touch-manipulation min-h-[60px] ${errors.date ? 'border-red-500' : 'border-gray-700 focus:border-gg-cyan'}`}
-                />
-                {errors.date && <p className="text-red-500 text-sm mt-2">{errors.date}</p>}
-              </div>
-
-              {/* Platform Selection */}
-              <div>
-                <h3 className="flex items-center text-gg-purple font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
-                  <Monitor className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> PLATFORM
-                </h3>
-                <div className="grid grid-cols-1 gap-3 md:gap-4">
-                  {TIERS.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                         setSelectedTier(t);
-                         if (selectedSeatId) setSelectedSeatId(null);
-                      }}
-                      className={`p-4 md:p-4 rounded-xl border text-left transition-all duration-300 flex justify-between items-center group relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-gg-purple touch-manipulation active:scale-[0.98] ${selectedTier.id === t.id ? 'border-gg-purple bg-gg-purple/10' : 'border-gray-700 bg-gg-medium/50 hover:border-gray-500'}`}
-                    >
-                      <div className="relative z-10 flex items-center overflow-hidden">
-                         {t.type === 'CONSOLE' ? 
-                            <Gamepad className={`mr-3 w-6 h-6 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} /> : 
-                            <Monitor className={`mr-3 w-6 h-6 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`} />
-                         }
-                         <span className={`text-sm md:text-lg truncate ${selectedTier.id === t.id ? 'text-white font-bold' : 'text-gray-300'}`}>{t.name}</span>
-                      </div>
-                      <span className={`relative z-10 font-mono text-sm md:text-base ml-2 flex-shrink-0 ${selectedTier.id === t.id ? 'text-gg-purple' : 'text-gray-500'}`}>₹{t.basePrice}/hr</span>
-                      {selectedTier.id === t.id && (
-                        <motion.div layoutId="activeTier" className="absolute inset-0 bg-gradient-to-r from-gg-purple/20 to-transparent" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Duration Selection */}
-              <div>
-                <h3 className="flex items-center text-gg-lime font-bold mb-2 md:mb-4 tracking-wide text-lg md:text-xl">
-                  <Clock className="mr-2 md:mr-3 w-5 h-5 md:w-6 md:h-6" /> DURATION
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-                  {DURATIONS.map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setSelectedDuration(d)}
-                      className={`py-4 px-2 rounded-xl border-2 transition-all duration-300 relative focus:outline-none focus:ring-2 focus:ring-gg-lime touch-manipulation active:scale-95 ${selectedDuration.id === d.id ? 'border-gg-lime bg-gg-lime/10 text-white' : 'border-gray-700 bg-gg-medium/50 text-gray-400'}`}
-                    >
-                      <span className="font-bold text-lg md:text-xl">{d.label}</span>
-                      {d.multiplier > d.value && (
-                        <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[10px] bg-gg-lime text-gg-dark px-1.5 py-0.5 rounded font-bold whitespace-nowrap border border-black shadow-lg z-20">
-                           SAVE {Math.round(100 - (d.multiplier/d.value)*100)}%
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Receipt / Total Section */}
-            <div className="flex flex-col h-full mt-4 lg:mt-0 lg:col-span-2">
-               <div className="flex-grow flex flex-col justify-center bg-gg-medium rounded-2xl p-6 md:p-10 border border-gray-800 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
-                  
-                  <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <h3 className="text-gray-400 font-mono mb-2 text-base md:text-lg tracking-widest uppercase">Estimated Total</h3>
-                        <div className="flex items-baseline mb-4">
-                            <span className="text-3xl md:text-5xl font-bold text-gg-cyan mr-2">₹</span>
-                            <div className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold tracking-tighter">
-                            <AnimatedCounter value={totalPrice} />
-                            </div>
+            {/* Changed from xl:flex-row to lg:flex-row to accommodate laptops better */}
+            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
+                
+                {/* LEFT: INTERACTIVE MAP (Interactive floor plan) */}
+                <div className="w-full lg:w-7/12 order-1">
+                    <div className="bg-[#0B0E1E] border border-gray-800 rounded-xl p-1 shadow-2xl relative overflow-hidden group">
+                        {/* Header Bar */}
+                        <div className="bg-gg-medium/50 px-4 py-3 border-b border-gray-800 flex justify-between items-center rounded-t-lg">
+                             <div className="flex items-center gap-2 text-gg-cyan font-heading font-bold tracking-wider text-xs md:text-sm">
+                                <Monitor size={14} className="md:w-4 md:h-4" /> INTERACTIVE FLOOR PLAN
+                             </div>
+                             <div className="flex gap-1.5 md:gap-2">
+                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-gg-cyan animate-pulse" />
+                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-gg-purple animate-pulse delay-75" />
+                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-gg-pink animate-pulse delay-150" />
+                             </div>
                         </div>
-                        <div className="space-y-3 md:space-y-4 text-sm md:text-lg text-gray-300 font-mono">
-                            <div className="flex justify-between">
-                                <span>Platform Rate</span>
-                                <span>₹{selectedTier.basePrice}/hr</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Duration</span>
-                                <span>{selectedDuration.text}</span>
-                            </div>
-                            {selectedSeatId && (
-                                <div className="flex justify-between text-gg-purple font-bold">
-                                    <span>Selected Seat</span>
-                                    <span>{selectedSeatId}</span>
-                                </div>
+                        
+                        {/* Map Container - Ensuring robust scrolling and container containment */}
+                        <div className="p-2 md:p-6 bg-gg-dark/50 relative min-h-[350px] md:min-h-[450px]">
+                             <div className="absolute inset-0 bg-[linear-gradient(rgba(0,217,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,217,255,0.03)_1px,transparent_1px)] bg-[length:40px_40px] pointer-events-none" />
+                             {/* SeatMap handles its own horizontal overflow, parent ensures containment */}
+                             <SeatMap selectedSeatId={selectedSeatId} onSeatSelect={handleSeatSelect} />
+                             <p className="mt-4 text-[10px] text-gray-500 font-mono flex items-center gap-2 justify-center md:justify-start">
+                                <Zap size={10} className="text-gg-lime" />
+                                Click a seat to automatically select platform.
+                             </p>
+                        </div>
+                        
+                        {/* Animated Border Gradient */}
+                        <div className="absolute inset-0 border-2 border-transparent rounded-xl pointer-events-none bg-gradient-to-b from-gg-cyan/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style={{ maskImage: 'linear-gradient(black, transparent)' }} />
+                    </div>
+                </div>
+
+                {/* RIGHT: BOOKING FORM */}
+                <div className="w-full lg:w-5/12 order-2">
+                    <div className="bg-[#0B0E1E] border border-gray-800 rounded-xl p-5 md:p-8 shadow-2xl relative">
+                        {/* Status Overlay */}
+                        <AnimatePresence>
+                            {status !== 'IDLE' && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="absolute inset-0 bg-gg-dark/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center rounded-xl border border-gg-cyan/30"
+                                >
+                                    {status === 'PROCESSING' ? (
+                                        <>
+                                            <div className="relative mb-6">
+                                                <div className="absolute inset-0 rounded-full border-4 border-gray-800" />
+                                                <div className="w-16 h-16 rounded-full border-4 border-t-gg-cyan border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                                                <Loader2 className="absolute inset-0 m-auto text-gg-cyan w-8 h-8 animate-pulse" />
+                                            </div>
+                                            <h4 className="text-xl font-heading font-bold text-white mb-2 tracking-widest">INITIALIZING</h4>
+                                            <p className="text-xs text-gg-cyan font-mono animate-pulse">Establishing secure uplink...</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <motion.div 
+                                                initial={{ scale: 0 }} 
+                                                animate={{ scale: 1, rotate: 360 }} 
+                                                className="w-20 h-20 bg-gg-lime/10 rounded-full flex items-center justify-center mb-6 border border-gg-lime/50 shadow-[0_0_30px_rgba(204,255,0,0.3)]"
+                                            >
+                                                <CheckCircle className="w-10 h-10 text-gg-lime" />
+                                            </motion.div>
+                                            <h4 className="text-2xl font-heading font-bold text-white mb-2">ACCESS GRANTED</h4>
+                                            <p className="text-xs text-gray-400 font-mono">Redirecting to payment gateway...</p>
+                                        </>
+                                    )}
+                                </motion.div>
                             )}
-                            <div className="flex justify-between text-gg-lime font-bold">
-                                <span>Multiplier</span>
-                                <span>x{selectedDuration.multiplier}</span>
+                        </AnimatePresence>
+
+                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                            
+                            {/* 1. PERSONAL DETAILS */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                                <div className="group">
+                                    <label className="text-[10px] font-mono text-gray-500 uppercase font-bold mb-1.5 flex items-center gap-1">
+                                        <User size={10} /> Name
+                                    </label>
+                                    <input 
+                                        type="text"
+                                        required
+                                        placeholder="Enter your name"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        // CRITICAL: text-base prevents iOS zoom on focus
+                                        className="w-full bg-gg-dark border border-gray-700 rounded p-2.5 md:p-3 text-base text-white focus:border-gg-cyan focus:shadow-[0_0_10px_rgba(0,217,255,0.2)] outline-none transition-all placeholder-gray-600 font-sans"
+                                    />
+                                </div>
+                                <div className="group">
+                                    <label className="text-[10px] font-mono text-gray-500 uppercase font-bold mb-1.5 flex items-center gap-1">
+                                        <Phone size={10} /> Phone
+                                    </label>
+                                    <input 
+                                        type="tel"
+                                        required
+                                        placeholder="10-digit number"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        // CRITICAL: text-base prevents iOS zoom on focus
+                                        className="w-full bg-gg-dark border border-gray-700 rounded p-2.5 md:p-3 text-base text-white focus:border-gg-cyan focus:shadow-[0_0_10px_rgba(0,217,255,0.2)] outline-none transition-all placeholder-gray-600 font-sans"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div>
-                        {errors.general && (
-                        <div role="alert" className="mb-4 p-3 bg-red-900/20 border border-red-500/50 rounded text-red-400 text-xs md:text-sm text-center">
-                            {errors.general}
-                        </div>
-                        )}
+                            {/* 2. DATE & TIME SELECT (12h FORMAT) */}
+                            <div>
+                                <label className="text-[10px] font-mono text-gg-cyan uppercase font-bold mb-1.5 flex items-center gap-1">
+                                    <Calendar size={10} /> Date & Time Slot
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Date Input */}
+                                    <div className="relative">
+                                        <input 
+                                            type="date"
+                                            required
+                                            min={getTodayLocal()}
+                                            value={bookingDate}
+                                            onChange={(e) => setBookingDate(e.target.value)}
+                                            className="w-full bg-gg-dark border border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base text-white focus:border-gg-cyan outline-none transition-all font-mono appearance-none [color-scheme:dark]"
+                                        />
+                                    </div>
+                                    
+                                    {/* Time Dropdown (12h format) */}
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            value={bookingTime}
+                                            onChange={(e) => setBookingTime(e.target.value)}
+                                            className="w-full bg-gg-dark border border-gray-700 rounded p-2.5 md:p-3 text-sm md:text-base text-white focus:border-gg-cyan outline-none transition-all font-mono appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled>Time</option>
+                                            {TIME_SLOTS.map((slot) => (
+                                                <option key={slot} value={slot}>{slot}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                            <ChevronDown size={14} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-[9px] text-gray-500 mt-1 font-mono pl-1">
+                                    *Hours: 09:30 AM - 10:00 PM
+                                </p>
+                            </div>
 
-                        <motion.button 
-                        onClick={handleConfirmBooking}
-                        disabled={status !== 'IDLE'}
-                        whileHover={status === 'IDLE' ? { scale: 1.02 } : {}}
-                        whileTap={status === 'IDLE' ? { scale: 0.98 } : {}}
-                        className={`w-full py-5 font-bold text-xl rounded-xl shadow-xl transition-all relative overflow-hidden flex items-center justify-center group/btn focus:outline-none focus:ring-2 focus:ring-white touch-manipulation ${
-                            status === 'IDLE' ? 'bg-gradient-to-r from-gg-cyan to-gg-purple text-white' : status === 'REDIRECTING' ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        }`}
-                        >
-                            <AnimatePresence mode="wait">
-                                {status === 'IDLE' && <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>CONFIRM BOOKING</motion.span>}
-                                {status === 'PROCESSING' && <motion.span key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center"><Loader2 className="animate-spin mr-3" /> PROCESSING...</motion.span>}
-                                {status === 'REDIRECTING' && <motion.span key="redirecting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center"><CheckCircle className="mr-3" /> REDIRECTING...</motion.span>}
-                            </AnimatePresence>
-                        </motion.button>
-                        <p className="text-center text-xs text-gray-500 mt-4">
-                            By clicking confirm, you will be redirected to WhatsApp to finalize your payment and slot.
-                        </p>
+                            {/* 3. PLATFORM SELECT */}
+                            <div>
+                                <label className="text-[10px] font-mono text-gg-purple uppercase font-bold mb-2 flex items-center gap-1">
+                                    <Monitor size={10} /> Platform
+                                </label>
+                                <div className="flex flex-col gap-2 md:gap-3">
+                                    {TIERS.map((tier) => {
+                                        const isSelected = selectedTier.id === tier.id;
+                                        return (
+                                            <button
+                                                key={tier.id}
+                                                type="button"
+                                                onClick={() => setSelectedTier(tier)}
+                                                className={`relative w-full p-2.5 md:p-3 rounded-lg border transition-all duration-300 flex justify-between items-center group overflow-hidden ${
+                                                    isSelected 
+                                                    ? `${tier.borderColor} bg-gg-dark ${tier.glowColor} shadow-md` 
+                                                    : 'border-gray-800 bg-gg-dark/50 hover:border-gray-600'
+                                                }`}
+                                            >
+                                                {/* Active Indicator Bar */}
+                                                {isSelected && (
+                                                    <motion.div 
+                                                        layoutId="activePlatform"
+                                                        className={`absolute left-0 top-0 bottom-0 w-1 ${tier.textColor.replace('text-', 'bg-')}`} 
+                                                    />
+                                                )}
+                                                
+                                                <div className="flex items-center gap-3 relative z-10 pl-2">
+                                                    <div className={`text-base md:text-lg ${isSelected ? tier.textColor : 'text-gray-500'} group-hover:scale-110 transition-transform`}>
+                                                        {tier.type === 'PC' ? <Monitor size={18} className="md:w-5 md:h-5" /> : <Gamepad size={18} className="md:w-5 md:h-5" />}
+                                                    </div>
+                                                    <span className={`font-bold text-xs md:text-sm tracking-wide text-left ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                                                        {tier.label}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[10px] md:text-xs font-mono relative z-10 flex items-center gap-2">
+                                                    <span className={`${isSelected ? tier.textColor : 'text-gray-600'}`}>₹{tier.basePrice}/hr</span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 4. DURATION SELECT */}
+                            <div>
+                                <label className="text-[10px] font-mono text-gg-lime uppercase font-bold mb-2 flex items-center gap-1">
+                                    <Clock size={10} /> Duration
+                                </label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {DURATIONS.map((dur) => {
+                                        const isSelected = selectedDuration.id === dur.id;
+                                        return (
+                                            <button
+                                                key={dur.id}
+                                                type="button"
+                                                onClick={() => setSelectedDuration(dur)}
+                                                className={`relative py-3 md:py-4 rounded-lg border text-xs md:text-base font-bold transition-all duration-200 overflow-hidden ${
+                                                    isSelected
+                                                    ? 'border-gg-lime text-gg-lime bg-gg-lime/10 shadow-[0_0_10px_rgba(204,255,0,0.2)]'
+                                                    : 'border-gray-800 bg-gg-dark/50 text-gray-500 hover:text-white hover:border-gray-600'
+                                                }`}
+                                            >
+                                                {dur.label}
+                                                {dur.isBestValue && (
+                                                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 bg-gg-red rounded-full flex items-center justify-center animate-pulse">
+                                                        <span className="w-full h-full rounded-full bg-gg-red opacity-75 animate-ping absolute" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 5. PRICE HUD PANEL - Auto Optimized for Screen Size */}
+                            <div className="bg-[#15192C] rounded-xl p-4 md:p-5 border border-gray-800 relative overflow-hidden mt-4 group hover:border-gray-700 transition-colors">
+                                {/* Background Grid Texture */}
+                                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] [background-size:8px_8px]" />
+                                
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-start mb-1">
+                                         <h5 className="text-[9px] md:text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em]">Estimated Total</h5>
+                                         <div className="w-1.5 h-1.5 bg-gg-red rounded-full animate-pulse shadow-[0_0_5px_red]" />
+                                    </div>
+                                    
+                                    {/* Responsive Price Display */}
+                                    <div className="flex items-baseline mb-4 md:mb-6 flex-wrap">
+                                        <span className={`text-xl md:text-2xl mr-1 md:mr-2 font-mono ${selectedTier.textColor}`}>₹</span>
+                                        {/* THE PRICE COUNTER WITH COLOR ANIMATION */}
+                                        <span className="text-4xl md:text-6xl font-heading font-black tracking-tighter drop-shadow-lg">
+                                            <PriceCounter value={totalPrice} color={selectedTier.accent} />
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-1.5 md:space-y-2 border-t border-gray-700/50 pt-2 md:pt-3">
+                                        <div className="flex justify-between text-[10px] md:text-xs font-mono text-gray-400">
+                                            <span>Platform Rate</span>
+                                            <span className="text-white">₹{selectedTier.basePrice}/hr</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] md:text-xs font-mono text-gray-400">
+                                            <span>Duration</span>
+                                            <span className="text-white">{selectedDuration.fullLabel}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] md:text-xs font-mono">
+                                            <span className="text-gg-lime">Multiplier</span>
+                                            <span className="text-gg-lime font-bold">x{selectedDuration.multiplier}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit"
+                                disabled={status !== 'IDLE'}
+                                className="w-full py-3 md:py-4 bg-gradient-to-r from-gg-cyan to-gg-purple text-white font-heading font-black text-base md:text-lg uppercase tracking-widest rounded-lg hover:shadow-[0_0_30px_rgba(0,217,255,0.5)] transition-all duration-300 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed clip-path-slant relative group overflow-hidden border border-white/10"
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                    CONFIRM BOOKING <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                </span>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                            </button>
+
+                            <p className="text-[8px] md:text-[9px] text-gray-600 text-center font-mono">
+                                By clicking confirm, you will be redirected to WhatsApp to finalize your payment and slot.
+                            </p>
+                        </form>
                     </div>
-                  </div>
-               </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </section>
   );
-};
